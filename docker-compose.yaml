@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: dev_db
+      POSTGRES_USER: amiroso
+      POSTGRES_PASSWORD: 'amiroso1236@/'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
