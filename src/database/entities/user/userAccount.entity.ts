@@ -31,7 +31,8 @@ export class UserAccount {
   last_name: string;
 
   @Column({
-    type: 'char',
+    type: 'enum',
+    enum: ['M', 'F'],
   })
   gender: string;
 
@@ -46,9 +47,6 @@ export class UserAccount {
   })
   role: UserRole;
   @OneToOne(() => UserLoginData, (userLoginData) => userLoginData.userAccount)
-  @JoinColumn({
-    name: 'user_id',
-  })
   userLoginData: UserLoginData;
 
   @OneToMany(
