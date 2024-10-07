@@ -10,12 +10,12 @@ export class UserLoginData {
     type: 'varchar',
     length: 50,
     nullable: false,
-    unique: true,
   })
   username: string;
   @Column({
     type: 'varchar',
     nullable: false,
+    select: false,
   })
   password: string;
 
@@ -28,28 +28,38 @@ export class UserLoginData {
 
   @Column({
     type: 'varchar',
+    nullable: true,
   })
-  confirmation_token: string;
+  confirmation_token?: string;
 
   @Column({
-    type: 'date',
+    type: 'timestamp',
+    nullable: true,
   })
-  token_generation_date: Date;
+  token_generation_timestamp?: number;
 
   @Column({
     type: 'varchar',
+    nullable: true,
   })
-  recovery_token: string;
+  recovery_token?: string;
 
   @Column({
-    type: 'date',
+    type: 'timestamp',
+    nullable: true,
   })
-  recovery_token_generation_date: Date;
+  recovery_token_timestamp?: number;
 
   @Column({
     type: 'boolean',
   })
   is_confirmed: boolean;
+  @Column({
+    type: 'enum',
+    enum: ['ACTIVE', 'INACTIVE', 'BLOCKED', 'DELETED'],
+    default: 'ACTIVE',
+  })
+  account_status: string;
   @OneToOne(() => UserAccount, (userAccount) => userAccount.userLoginData)
   @JoinColumn({ name: 'user_id' })
   userAccount: UserAccount;

@@ -16,6 +16,7 @@ export class UserRole {
 
   @Column({
     type: 'varchar',
+    unique: true,
   })
   role_name: string;
 
@@ -26,9 +27,11 @@ export class UserRole {
   @OneToMany(() => UserAccount, (userAccount) => userAccount.role)
   users: UserAccount[];
 
-  @ManyToMany(() => Permission, (permission) => permission.roles)
+  @ManyToMany(() => Permission, (permission) => permission.roles, {
+    cascade: true,
+  })
   @JoinTable({
-    name: 'grantedPermission',
+    name: 'granted_permissions',
     joinColumn: {
       name: 'role_id',
       referencedColumnName: 'role_id',
@@ -38,5 +41,5 @@ export class UserRole {
       referencedColumnName: 'permission_id',
     },
   })
-  permissions: Permission[];
+  permissions?: Permission[];
 }

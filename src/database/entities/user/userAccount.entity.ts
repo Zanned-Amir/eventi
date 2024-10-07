@@ -47,14 +47,14 @@ export class UserAccount {
   })
   role: UserRole;
   @OneToOne(() => UserLoginData, (userLoginData) => userLoginData.userAccount)
-  userLoginData: UserLoginData;
+  userLoginData?: UserLoginData;
 
   @OneToMany(
     () => UserLoginDataExternal,
     (userLoginDataExternal) => userLoginDataExternal.userAccount,
   )
-  userLoginDataExternal: UserLoginDataExternal[];
+  userLoginDataExternals?: UserLoginDataExternal[];
 
   @OneToMany(() => UserTokens, (userTokens) => userTokens.user)
-  tokens: UserTokens[];
+  tokens?: UserTokens[];
 }
