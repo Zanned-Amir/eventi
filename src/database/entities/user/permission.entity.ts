@@ -8,6 +8,11 @@ export class Permission {
   @Column({
     type: 'varchar',
   })
+  permission_name: string;
+  @Column({
+    type: 'varchar',
+    unique: true,
+  })
   permission_description: string;
   @ManyToMany(() => UserRole, (role) => role.permissions)
   roles: UserRole[];
