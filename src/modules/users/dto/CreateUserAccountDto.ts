@@ -1,4 +1,11 @@
-import { IsDate, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+} from 'class-validator';
 
 export class CreateUserAccountDto {
   @IsString()
@@ -14,8 +21,10 @@ export class CreateUserAccountDto {
 
   @IsDate()
   @IsNotEmpty()
+  @Transform(({ value }) => new Date(value))
   birth_date: Date;
 
-  @IsString()
-  role_id: number; // Reference to role
+  @IsNumber()
+  @IsNotEmpty()
+  role_id: number;
 }

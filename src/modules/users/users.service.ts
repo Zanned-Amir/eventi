@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import {
   UserAccount,
   UserLoginData,
@@ -30,6 +30,7 @@ export class UsersService {
     private readonly userRoleRepository: Repository<UserRole>,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
+    private readonly entityManger: EntityManager,
   ) {}
 
   async createUserAccount(createUserAccountDto: CreateUserAccountDto) {
@@ -146,18 +147,103 @@ export class UsersService {
     return query.rawQuery ? queryBuilder.getRawMany() : queryBuilder.getMany();
   }
 
+  async createUser(
+    createUserAccountDto: CreateUserAccountDto,
+    createUserLoginDataDto: CreateUserLoginDataDto,
+  ): Promise<{ userAccount: UserAccount; userLoginData: UserLoginData }> {
+    let userAccount: UserAccount;
+    let userLoginData: UserLoginData;
+
+    await this.entityManger.transaction(async (transactionalEntityManager) => {
+      userAccount = transactionalEntityManager.create(
+        UserAccount,
+        createUserAccountDto,
+      );
+
+      await transactionalEntityManager.save(UserAccount, userAccount);
+      userLoginData = transactionalEntityManager.create(UserLoginData, {
+        ...createUserLoginDataDto,
+        user_id: userAccount.user_id,
+      });
+
+      await transactionalEntityManager.save(UserLoginData, userLoginData);
+    });
+
+    return { userAccount, userLoginData };
+  }
+
+  async updateUser(
+    id: number,
+    UpdateUserAccountDto: UpdateUserAccountDto,
+    updateUserLoginDataDto: UpdateUserLoginDataDto,
+  ) {
+    await this.entityManger.transaction(async (transactionalEntityManager) => {
+      await transactionalEntityManager.update(
+        UserAccount,
+        id,
+        UpdateUserAccountDto,
+      );
+
+      await transactionalEntityManager.update(
+        UserLoginData,
+        id,
+        updateUserLoginDataDto,
+      );
+    });
+  }
+
+  async getUser(id: number) {
+    const user = await this.userAccountRepository
+      .createQueryBuilder('userAccount')
+      .leftJoinAndSelect('userAccount.userLoginData', 'userLoginData')
+      .where('userAccount.user_id = :id', { id })
+      .getRawOne();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user;
+  }
+
   async updateUserAccount(
     id: number,
     updateUserAccountDto: UpdateUserAccountDto,
   ) {
-    await this.userAccountRepository.update(id, updateUserAccountDto);
+    const result = await this.userAccountRepository.update(
+      id,
+      updateUserAccountDto,
+    );
+
+    console.log(result);
     return this.userAccountRepository.findOne({
       where: { user_id: id },
     });
   }
 
+  //NB: it will delete the user account and all related data (login data, tokens, etc.)
+
   async deleteUserAccount(id: number) {
-    await this.userAccountRepository.delete(id);
+    const result = await this.userAccountRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return { deleted: true };
+  }
+
+  async getUserLoginData(id: number) {
+    return this.userLoginDataRepository.findOne({
+      where: { user_id: id },
+    });
+  }
+
+  async deleteUserLoginData(id: number) {
+    const result = await this.userLoginDataRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
     return { deleted: true };
   }
 

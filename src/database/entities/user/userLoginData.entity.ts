@@ -29,29 +29,34 @@ export class UserLoginData {
   @Column({
     type: 'varchar',
     nullable: true,
+    select: false,
   })
   confirmation_token?: string;
 
   @Column({
     type: 'timestamp',
     nullable: true,
+    select: false,
   })
   token_generation_timestamp?: number;
 
   @Column({
     type: 'varchar',
     nullable: true,
+    select: false,
   })
   recovery_token?: string;
 
   @Column({
     type: 'timestamp',
     nullable: true,
+    select: false,
   })
   recovery_token_timestamp?: number;
 
   @Column({
     type: 'boolean',
+    default: false,
   })
   is_confirmed: boolean;
   @Column({
@@ -60,7 +65,9 @@ export class UserLoginData {
     default: 'ACTIVE',
   })
   account_status: string;
-  @OneToOne(() => UserAccount, (userAccount) => userAccount.userLoginData)
+  @OneToOne(() => UserAccount, (userAccount) => userAccount.userLoginData, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   userAccount: UserAccount;
 }
