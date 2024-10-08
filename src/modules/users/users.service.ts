@@ -183,6 +183,7 @@ export class UsersService {
         id,
         UpdateUserAccountDto,
       );
+
       await transactionalEntityManager.update(
         UserLoginData,
         id,
@@ -209,7 +210,12 @@ export class UsersService {
     id: number,
     updateUserAccountDto: UpdateUserAccountDto,
   ) {
-    await this.userAccountRepository.update(id, updateUserAccountDto);
+    const result = await this.userAccountRepository.update(
+      id,
+      updateUserAccountDto,
+    );
+
+    console.log(result);
     return this.userAccountRepository.findOne({
       where: { user_id: id },
     });
@@ -219,6 +225,21 @@ export class UsersService {
 
   async deleteUserAccount(id: number) {
     const result = await this.userAccountRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return { deleted: true };
+  }
+
+  async getUserLoginData(id: number) {
+    return this.userLoginDataRepository.findOne({
+      where: { user_id: id },
+    });
+  }
+
+  async deleteUserLoginData(id: number) {
+    const result = await this.userLoginDataRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
