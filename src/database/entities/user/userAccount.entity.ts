@@ -46,7 +46,10 @@ export class UserAccount {
     name: 'role_id',
   })
   role: UserRole;
-  @OneToOne(() => UserLoginData, (userLoginData) => userLoginData.userAccount)
+  @OneToOne(() => UserLoginData, (userLoginData) => userLoginData.userAccount, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   userLoginData?: UserLoginData;
 
   @OneToMany(
