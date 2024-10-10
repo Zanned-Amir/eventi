@@ -1,12 +1,14 @@
+import { Optional } from '@nestjs/common';
 import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
 
-export class UserAccount {
-  @IsString()
-  username: string;
+export class LoginRequestDto {
   @IsEmail()
   email: string;
 
-  @IsString()
   @IsStrongPassword()
+  @IsString()
   password: string;
+
+  @Optional()
+  user_id?: number;
 }

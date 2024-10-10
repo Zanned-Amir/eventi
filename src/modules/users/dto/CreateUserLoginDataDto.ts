@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsStrongPassword,
 } from 'class-validator';
 
 export class CreateUserLoginDataDto {
@@ -14,6 +15,7 @@ export class CreateUserLoginDataDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsStrongPassword()
   password: string;
 
   @IsString()

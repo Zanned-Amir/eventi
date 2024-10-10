@@ -18,6 +18,7 @@ import {
   UpdatePermissionDto,
 } from './dto/index';
 import { FindUsersDto } from './dto/FindUsersDto';
+import { hash } from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -163,6 +164,7 @@ export class UsersService {
       await transactionalEntityManager.save(UserAccount, userAccount);
       userLoginData = transactionalEntityManager.create(UserLoginData, {
         ...createUserLoginDataDto,
+        password: await hash(createUserLoginDataDto.password, 10),
         user_id: userAccount.user_id,
       });
 
@@ -235,6 +237,19 @@ export class UsersService {
   async getUserLoginData(id: number) {
     return this.userLoginDataRepository.findOne({
       where: { user_id: id },
+    });
+  }
+
+  async getUserLoginDataByEmail(email: string) {
+    return this.userLoginDataRepository.findOne({
+      where: { email },
+      select: [
+        'user_id',
+        'email',
+        'password',
+        'is_confirmed',
+        'account_status',
+      ],
     });
   }
 

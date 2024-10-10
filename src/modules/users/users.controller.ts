@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
@@ -16,6 +17,9 @@ import {
   CreateUserLoginDataDto,
   UpdateUserAccountDto,
 } from './dto';
+
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -29,7 +33,9 @@ export class UsersController {
   //users
 
   @Get()
-  async getUsers(@Query() query) {
+  @UseGuards(JwtAuthGuard)
+  async getUsers(@Query() query, @CurrentUser() user) {
+    console.log(user);
     const users = await this.usersService.getUsers(query);
     return {
       status: 'success',
