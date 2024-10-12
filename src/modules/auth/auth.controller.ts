@@ -5,7 +5,7 @@ import { Response } from 'express';
 import { CreateUserAccountDto, CreateUserLoginDataDto } from '../users/dto';
 import { LoginRequestDto } from './dto/LoginRequestDto';
 import { LocalAuthGuard } from 'src/common/guards/local-auth.guards';
-import { UserLoginData } from 'src/database/entities/user';
+import { JwtRefreshAuthGuard } from 'src/common/guards/jwt-refresh-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -25,14 +25,20 @@ export class AuthController {
     @CurrentUser() user: LoginRequestDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.authService.login(user, res);
+    return await this.authService.login(user, res);
   }
 
   @Post('logout')
   async logout() {}
 
   @Post('refresh-token')
-  async refreshToken() {}
+  @UseGuards(JwtRefreshAuthGuard)
+  async refreshToken(
+    @CurrentUser() user: LoginRequestDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return await this.authService.refreshToken(user, res);
+  }
 
   @Post('forgot-password')
   async forgotPassword() {}

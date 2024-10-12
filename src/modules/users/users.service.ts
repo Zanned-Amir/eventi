@@ -6,6 +6,7 @@ import {
   UserLoginData,
   UserRole,
   Permission,
+  UserTokens,
 } from 'src/database/entities/user';
 import {
   CreateUserAccountDto,
@@ -19,6 +20,7 @@ import {
 } from './dto/index';
 import { FindUsersDto } from './dto/FindUsersDto';
 import { hash } from 'bcrypt';
+import { CreateUserTokenDto } from './dto/CreateUserTokenDto';
 
 @Injectable()
 export class UsersService {
@@ -31,6 +33,8 @@ export class UsersService {
     private readonly userRoleRepository: Repository<UserRole>,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
+    @InjectRepository(UserTokens)
+    private readonly userTokensRepository: Repository<UserTokens>,
     private readonly entityManger: EntityManager,
   ) {}
 
@@ -212,12 +216,8 @@ export class UsersService {
     id: number,
     updateUserAccountDto: UpdateUserAccountDto,
   ) {
-    const result = await this.userAccountRepository.update(
-      id,
-      updateUserAccountDto,
-    );
+    await this.userAccountRepository.update(id, updateUserAccountDto);
 
-    console.log(result);
     return this.userAccountRepository.findOne({
       where: { user_id: id },
     });
@@ -307,5 +307,42 @@ export class UsersService {
     return this.permissionRepository.findOne({
       where: { permission_id: id },
     });
+  }
+
+  async verifyUserRefreshToken(user_id: number, device_info: string) {
+    return await this.userTokensRepository.findOne({
+      where: { user_id, device_info },
+    });
+  }
+
+  async createUserToken(userToken: CreateUserTokenDto) {
+    const existedToken = await this.userTokensRepository.findOne({
+      where: { user_id: userToken.user_id, device_info: userToken.device_info },
+    });
+
+    if (existedToken) {
+      return this.userTokensRepository.update(
+        { user_id: userToken.user_id, device_info: userToken.device_info },
+        userToken,
+      );
+    }
+
+    const token = this.userTokensRepository.create(userToken);
+    return this.userTokensRepository.save(token);
+  }
+
+  async getUserToken(user_id: number, device_info: string) {
+    return this.userTokensRepository.findOne({
+      where: { user_id, device_info, is_in_blacklist: false },
+    });
+  }
+
+  async blackList(user_id: number, device_info: string) {
+    const result = await this.userTokensRepository.update(
+      { user_id, device_info },
+      { is_in_blacklist: true },
+    );
+
+    return result;
   }
 }

@@ -11,4 +11,7 @@ export class LoginRequestDto {
 
   @Optional()
   user_id?: number;
+
+  @Optional()
+  userAgent: string;
 }
