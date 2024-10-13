@@ -1,11 +1,6 @@
+import { Optional } from '@nestjs/common';
 import { Transform } from 'class-transformer';
-import {
-  IsDate,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-} from 'class-validator';
+import { IsDate, IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateUserAccountDto {
   @IsString()
@@ -24,7 +19,6 @@ export class CreateUserAccountDto {
   @Transform(({ value }) => new Date(value))
   birth_date: Date;
 
-  @IsNumber()
-  @IsNotEmpty()
+  @Optional()
   role_id: number;
 }

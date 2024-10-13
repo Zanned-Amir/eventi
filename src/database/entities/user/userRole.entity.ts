@@ -9,14 +9,23 @@ import {
 import { UserAccount } from './userAccount.entity';
 import { Permission } from './permission.entity';
 
+export enum Role {
+  ADMIN = 'ADMIN',
+  EVENT_ORGANIZER = 'EVENT_ORGANIZER',
+  SUPPORT_STAFF = 'SUPPORT_STAFF',
+  USER = 'USER',
+  GUEST = 'GUEST',
+}
+
 @Entity()
 export class UserRole {
   @PrimaryGeneratedColumn()
   role_id: number;
 
   @Column({
-    type: 'varchar',
-    unique: true,
+    type: 'enum',
+    enum: Role,
+    default: Role.USER,
   })
   role_name: string;
 
@@ -31,7 +40,7 @@ export class UserRole {
     cascade: true,
   })
   @JoinTable({
-    name: 'granted_permissions',
+    name: 'granted_permission',
     joinColumn: {
       name: 'role_id',
       referencedColumnName: 'role_id',

@@ -10,6 +10,9 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { TicketModule } from './modules/ticket/ticket.module';
 import { ConcertModule } from './modules/concert/concert.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -26,6 +29,16 @@ import { NotificationModule } from './modules/notification/notification.module';
     NotificationModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}

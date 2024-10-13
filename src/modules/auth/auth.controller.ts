@@ -4,13 +4,14 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Response } from 'express';
 import { CreateUserAccountDto, CreateUserLoginDataDto } from '../users/dto';
 import { LoginRequestDto } from './dto/LoginRequestDto';
-import { LocalAuthGuard } from 'src/common/guards/local-auth.guards';
+import { LocalAuthGuard } from 'src/common/guards/local-auth.guard';
 import { JwtRefreshAuthGuard } from 'src/common/guards/jwt-refresh-auth.guard';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
+  @Public()
   @Post('register')
   async register(
     @Body('userAccount') userAccountDto: CreateUserAccountDto,
@@ -18,7 +19,7 @@ export class AuthController {
   ) {
     return await this.authService.register(userAccountDto, userLoginDataDto);
   }
-
+  @Public()
   @Post('login')
   @UseGuards(LocalAuthGuard)
   async login(
@@ -31,6 +32,7 @@ export class AuthController {
   @Post('logout')
   async logout() {}
 
+  @Public()
   @Post('refresh-token')
   @UseGuards(JwtRefreshAuthGuard)
   async refreshToken(

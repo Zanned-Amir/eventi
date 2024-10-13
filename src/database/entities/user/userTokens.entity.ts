@@ -15,7 +15,9 @@ enum TokenType {
   REFRESH = 'REFRESH',
 }
 
-@Entity()
+@Entity({
+  name: 'user_token',
+})
 export class UserTokens {
   @PrimaryGeneratedColumn()
   token_id: number;

@@ -40,7 +40,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     if (!user) {
       throw new UnauthorizedException('Invalid refresh token');
     }
-
+    console.log('user', user);
     return user;
   }
 }

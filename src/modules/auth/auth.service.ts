@@ -23,7 +23,6 @@ export class AuthService {
   ) {
     const user = await this.usersService.createUser(createUserAccountDto, {
       ...createUserLoginDataDto,
-      password: await hash(createUserLoginDataDto.password, 10),
     });
     return user;
   }
@@ -46,7 +45,6 @@ export class AuthService {
       ),
       10,
     );
-
     const accessToken = this.jwtService.sign(tokenPayload, {
       secret: this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_SECRET'),
       expiresIn: accessTokenExpiry / 1000,
@@ -94,13 +92,20 @@ export class AuthService {
     try {
       const user = await this.usersService.getUserLoginDataByEmail(email);
 
-      const authenticated = await compare(password, user.password);
-      if (!authenticated) {
-        throw new UnauthorizedException();
+      if (!user) {
+        throw new UnauthorizedException('User not found');
       }
 
+      const authenticated = await compare(password, user.password);
+
+      if (!authenticated) {
+        throw new UnauthorizedException('Invalid password');
+      }
+
+      user.password = undefined;
       return user;
     } catch (err) {
+      console.error('Error during user verification:', err);
       throw new UnauthorizedException('Credentials are invalid');
     }
   }
@@ -185,6 +190,7 @@ export class AuthService {
       }
       return user;
     } catch (err) {
+      console.error('Error during user verification:', err);
       throw new UnauthorizedException('Refresh token is not valid');
     }
   }

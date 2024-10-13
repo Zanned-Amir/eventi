@@ -155,11 +155,22 @@ export class UsersService {
   async createUser(
     createUserAccountDto: CreateUserAccountDto,
     createUserLoginDataDto: CreateUserLoginDataDto,
-  ): Promise<{ userAccount: UserAccount; userLoginData: UserLoginData }> {
+  ) {
     let userAccount: UserAccount;
     let userLoginData: UserLoginData;
+    let userRole: UserRole;
 
     await this.entityManger.transaction(async (transactionalEntityManager) => {
+      userRole = await transactionalEntityManager.findOne(UserRole, {
+        where: { role_name: 'USER' },
+      });
+
+      if (!userRole) {
+        throw new NotFoundException('User role not found');
+      }
+
+      createUserAccountDto.role_id = userRole.role_id;
+
       userAccount = transactionalEntityManager.create(
         UserAccount,
         createUserAccountDto,
@@ -175,7 +186,19 @@ export class UsersService {
       await transactionalEntityManager.save(UserLoginData, userLoginData);
     });
 
-    return { userAccount, userLoginData };
+    return {
+      user_id: userAccount.user_id,
+      first_name: userAccount.first_name,
+      last_name: userAccount.last_name,
+      email: userLoginData.email,
+      username: userLoginData.username,
+      is_confirmed: userLoginData.is_confirmed,
+      account_status: userLoginData.account_status,
+      role: {
+        role_name: userRole.role_name,
+        role_id: userRole.role_id,
+      },
+    };
   }
 
   async updateUser(
@@ -199,17 +222,43 @@ export class UsersService {
   }
 
   async getUser(id: number) {
-    const user = await this.userAccountRepository
-      .createQueryBuilder('userAccount')
-      .leftJoinAndSelect('userAccount.userLoginData', 'userLoginData')
-      .where('userAccount.user_id = :id', { id })
-      .getRawOne();
+    const user = await this.userAccountRepository.findOne({
+      where: { user_id: id },
+      relations: ['role', 'userLoginData'],
+      select: {
+        user_id: true,
+        first_name: true,
+        last_name: true,
+        role: {
+          role_name: true,
+          role_id: true,
+        },
+        userLoginData: {
+          email: true,
+          username: true,
+          is_confirmed: true,
+          account_status: true,
+        },
+      },
+    });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    return user;
+    return {
+      user_id: user.user_id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.userLoginData?.email,
+      username: user.userLoginData?.username,
+      is_confirmed: user.userLoginData?.is_confirmed,
+      account_status: user.userLoginData?.account_status,
+      role: {
+        role_name: user.role?.role_name,
+        role_id: user.role?.role_id,
+      },
+    };
   }
 
   async updateUserAccount(
@@ -241,16 +290,37 @@ export class UsersService {
   }
 
   async getUserLoginDataByEmail(email: string) {
-    return this.userLoginDataRepository.findOne({
-      where: { email },
-      select: [
-        'user_id',
-        'email',
-        'password',
-        'is_confirmed',
-        'account_status',
-      ],
-    });
+    const userLoginData = await this.userLoginDataRepository
+      .createQueryBuilder('userLoginData')
+      .leftJoinAndSelect('userLoginData.userAccount', 'userAccount')
+      .leftJoinAndSelect('userAccount.role', 'role')
+      .where('userLoginData.email = :email', { email })
+      .select([
+        'userLoginData.user_id',
+        'userLoginData.email',
+        'userLoginData.password',
+        'userLoginData.is_confirmed',
+        'userLoginData.account_status',
+        'userAccount.role_id',
+        'role.role_name',
+      ])
+      .getOne();
+
+    if (userLoginData) {
+      return {
+        user_id: userLoginData.user_id,
+        email: userLoginData.email,
+        password: userLoginData.password,
+        is_confirmed: userLoginData.is_confirmed,
+        account_status: userLoginData.account_status,
+        role: {
+          role_id: userLoginData.userAccount?.role_id,
+          role_name: userLoginData.userAccount?.role?.role_name,
+        },
+      };
+    }
+
+    return userLoginData;
   }
 
   async deleteUserLoginData(id: number) {
@@ -332,9 +402,37 @@ export class UsersService {
   }
 
   async getUserToken(user_id: number, device_info: string) {
-    return this.userTokensRepository.findOne({
-      where: { user_id, device_info, is_in_blacklist: false },
-    });
+    const userToken = await this.userTokensRepository
+      .createQueryBuilder('userToken')
+      .leftJoinAndSelect('userToken.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .where('userToken.user_id = :user_id', { user_id })
+      .andWhere('userToken.device_info = :device_info', { device_info })
+      .andWhere('userToken.is_in_blacklist = false')
+      .select([
+        'userToken.token',
+        'userToken.user_id',
+        'userToken.device_info',
+        'user.birth_date', //DON'T remove this line  !!
+        'role.role_name',
+        'role.role_id',
+      ])
+      .getOne();
+
+    if (userToken) {
+      return {
+        user_id: userToken.user_id,
+        token: userToken.token,
+        device_info: userToken.device_info,
+        birth_date: userToken.user.birth_date,
+        role: {
+          role_name: userToken.user.role?.role_name,
+          role_id: userToken.user.role?.role_id,
+        },
+      };
+
+      return null; // Return null if no token is found
+    }
   }
 
   async blackList(user_id: number, device_info: string) {

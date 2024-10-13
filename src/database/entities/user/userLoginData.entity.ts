@@ -1,4 +1,12 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { UserAccount } from './userAccount.entity';
 
 @Entity()
@@ -13,7 +21,7 @@ export class UserLoginData {
   })
   username: string;
   @Column({
-    type: 'varchar',
+    type: 'text',
     nullable: false,
     select: false,
   })
@@ -59,12 +67,20 @@ export class UserLoginData {
     default: false,
   })
   is_confirmed: boolean;
+
   @Column({
     type: 'enum',
     enum: ['ACTIVE', 'INACTIVE', 'BLOCKED', 'DELETED'],
     default: 'ACTIVE',
   })
   account_status: string;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
   @OneToOne(() => UserAccount, (userAccount) => userAccount.userLoginData, {
     onDelete: 'CASCADE',
   })

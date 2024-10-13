@@ -56,15 +56,14 @@ export class UsersController {
     @Body('userAccount') userAccountDto: CreateUserAccountDto,
     @Body('userLoginData') userLoginDataDto: CreateUserLoginDataDto,
   ) {
-    const { userAccount, userLoginData } = await this.usersService.createUser(
+    const user = await this.usersService.createUser(
       userAccountDto,
       userLoginDataDto,
     );
     return {
       status: 'success',
       data: {
-        ...userAccount,
-        ...userLoginData,
+        ...user,
       },
     };
   }
