@@ -7,6 +7,8 @@ import {
   UserAccount,
   UserLoginData,
 } from '../entities/user';
+import { Genre } from '../entities/concert/genre.entity';
+import { Role } from '../entities/concert/role.entity';
 
 export class MainSeeder implements Seeder {
   public async run(dataSource: DataSource): Promise<void> {
@@ -14,6 +16,8 @@ export class MainSeeder implements Seeder {
     const permissionRepository = dataSource.getRepository(Permission);
     const userAccountRepository = dataSource.getRepository(UserAccount);
     const userLoginDataRepository = dataSource.getRepository(UserLoginData);
+    const genreRepository = dataSource.getRepository(Genre);
+    const roleConcert = dataSource.getRepository(Role);
 
     console.log('Cleaning up existing data...');
 
@@ -25,7 +29,119 @@ export class MainSeeder implements Seeder {
     console.log('Existing data cleaned up.');
 
     console.log('Seeding database with initial data...');
-    console.log('Creating permissions, roles, and test users...');
+    console.log('Creating permissions,genres, roles, and test users...');
+
+    const genres = [
+      {
+        genre_name: 'Rock',
+      },
+      {
+        genre_name: 'Pop',
+      },
+      {
+        genre_name: 'Jazz',
+      },
+      {
+        genre_name: 'Classical',
+      },
+      {
+        genre_name: 'Hip-hop',
+      },
+    ];
+
+    await genreRepository.save(genres);
+    console.log('Genres created');
+
+    const roleConcerts = [
+      {
+        role_name: 'Performer',
+        role_description:
+          'Responsible for performing at the event, including musicians, bands, and other entertainers.',
+      },
+      {
+        role_name: 'Organizer',
+        role_description:
+          'Manages the overall planning and execution of the concert, coordinating with different teams and services.',
+      },
+      {
+        role_name: 'Security',
+        role_description:
+          'Ensures the safety of attendees, performers, and staff, managing crowd control and access points.',
+      },
+      {
+        role_name: 'Vendor',
+        role_description:
+          'Manages stalls or booths, selling merchandise, food, or drinks during the concert.',
+      },
+      {
+        role_name: 'Sound Engineer',
+        role_description:
+          'Responsible for managing and optimizing sound quality during the event, including sound checks and equipment setup.',
+      },
+      {
+        role_name: 'Light Engineer',
+        role_description:
+          'Manages stage lighting and effects to enhance the visual experience during performances.',
+      },
+      {
+        role_name: 'Stage Manager',
+        role_description:
+          'Coordinates all backstage activities, including managing the schedule and ensuring smooth transitions between performances.',
+      },
+      {
+        role_name: 'Volunteer',
+        role_description:
+          'Helps with various tasks such as event setup, guest assistance, and providing general support during the concert.',
+      },
+      {
+        role_name: 'Ticketing Manager',
+        role_description:
+          'Oversees ticket sales, access control, and customer issues related to ticketing.',
+      },
+      {
+        role_name: 'Marketing Manager',
+        role_description:
+          'Handles promotional activities, advertising, and outreach to ensure a strong audience turnout.',
+      },
+      {
+        role_name: 'VIP Coordinator',
+        role_description:
+          'Ensures the smooth experience of VIP attendees, including managing seating, amenities, and exclusive access.',
+      },
+      {
+        role_name: 'Artist Liaison',
+        role_description:
+          'Coordinates with performers, ensuring their needs are met, and manages their schedule during the event.',
+      },
+      {
+        role_name: 'Backstage Crew',
+        role_description:
+          'Assists with setting up equipment, moving props, and supporting performers behind the scenes.',
+      },
+      {
+        role_name: 'Catering Manager',
+        role_description:
+          'Organizes food and beverages for performers, staff, and VIP guests during the event.',
+      },
+      {
+        role_name: 'Safety Officer',
+        role_description:
+          'Monitors health and safety standards, ensuring the venue complies with safety regulations.',
+      },
+      {
+        role_name: 'Transport Manager',
+        role_description:
+          'Arranges transportation for performers, staff, and equipment to and from the venue.',
+      },
+      {
+        role_name: 'Event Host/Emcee',
+        role_description:
+          'Serves as the public face of the event, introducing performers and keeping the audience engaged.',
+      },
+    ];
+
+    await roleConcert.save(roleConcerts);
+    console.log('Concert roles created');
 
     // Create Permissions with UPPERCASE and UNDERSCORE separated names
     const permissions = [
