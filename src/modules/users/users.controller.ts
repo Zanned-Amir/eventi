@@ -73,6 +73,7 @@ export class UsersController {
     await this.usersService.deleteUserAccount(id);
     return {
       status: 'success',
+      data: 'User deleted successfully',
     };
   }
 
@@ -139,6 +140,7 @@ export class UsersController {
     await this.usersService.deleteUserAccount(id);
     return {
       status: 'success',
+      data: 'account deleted successfully',
     };
   }
 

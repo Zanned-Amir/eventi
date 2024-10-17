@@ -5,7 +5,9 @@ import { Artist } from './artist.entity';
 export class Genre {
   @PrimaryGeneratedColumn()
   genre_id: number;
-  @Column()
+  @Column({
+    unique: true,
+  })
   genre_name: string;
   @ManyToMany(() => Artist, (artist) => artist.genres)
   artists: Artist[];

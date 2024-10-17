@@ -22,10 +22,17 @@ export class Venue {
   type: string;
 
   @Column({
-    type: 'text',
+    type: 'varchar',
     nullable: true,
   })
-  contact: string;
+  email: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  phone_number: string;
+
   @OneToMany(() => Concert, (concert) => concert.venue)
   concerts: Concert[];
 }

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEmail } from 'class-validator';
 
 export class CreateVenueDto {
   @IsString()
@@ -15,6 +15,11 @@ export class CreateVenueDto {
   type?: string;
 
   @IsString()
+  @IsEmail()
   @IsOptional()
-  contact?: string;
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  phone_number?: string;
 }

@@ -34,7 +34,10 @@ export class Concert {
   @Column()
   concert_name: string;
 
-  @ManyToMany(() => Artist, (artist) => artist.concerts)
+  @ManyToMany(() => Artist, (artist) => artist.concerts, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinTable({
     name: 'concert_artist',
     joinColumn: {
