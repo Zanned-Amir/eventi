@@ -1,7 +1,6 @@
 import { Entity, PrimaryGeneratedColumn } from 'typeorm';
-
 @Entity()
-export class OrderTicket {
+export class Order {
   @PrimaryGeneratedColumn()
-  order_ticket_id: number;
+  order_id: number;
 }

@@ -1,4 +1,6 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
   JoinTable,
@@ -51,4 +53,10 @@ export class UserRole {
     },
   })
   permissions?: Permission[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatRoleName() {
+    this.role_name = this.role_name.toUpperCase();
+  }
 }

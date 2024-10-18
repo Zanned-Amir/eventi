@@ -222,25 +222,23 @@ export class UsersService {
   }
 
   async getUser(id: number) {
-    const user = await this.userAccountRepository.findOne({
-      where: { user_id: id },
-      relations: ['role', 'userLoginData'],
-      select: {
-        user_id: true,
-        first_name: true,
-        last_name: true,
-        role: {
-          role_name: true,
-          role_id: true,
-        },
-        userLoginData: {
-          email: true,
-          username: true,
-          is_confirmed: true,
-          account_status: true,
-        },
-      },
-    });
+    const user = await this.userAccountRepository
+      .createQueryBuilder('userAccount')
+      .leftJoinAndSelect('userAccount.role', 'role')
+      .leftJoinAndSelect('userAccount.userLoginData', 'userLoginData')
+      .where('userAccount.user_id = :id', { id })
+      .select([
+        'userAccount.user_id',
+        'userAccount.first_name',
+        'userAccount.last_name',
+        'role.role_name',
+        'role.role_id',
+        'userLoginData.email',
+        'userLoginData.username',
+        'userLoginData.is_confirmed',
+        'userLoginData.account_status',
+      ])
+      .getOne();
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);

@@ -1,4 +1,6 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
   JoinColumn,
@@ -12,6 +14,8 @@ import { Venue } from './venue.entity';
 import { ConcertGroup } from './concertGroup.entity';
 import { OneToMany } from 'typeorm';
 import { ConcertRole } from './concertRole.entity';
+import { Ticket } from '../ticket/ticket.entity';
+import { TicketCategory } from '../ticket/ticketCategory.entity';
 
 @Entity()
 export class Concert {
@@ -27,9 +31,16 @@ export class Concert {
   concert_group_id: number;
 
   @Column({
-    type: 'date',
+    type: 'timestamp',
+    nullable: true,
   })
-  concert_date: Date;
+  concert_start_date: Date;
+
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
+  concert_end_date: Date;
 
   @Column()
   concert_name: string;
@@ -60,4 +71,16 @@ export class Concert {
 
   @OneToMany(() => ConcertRole, (concertRole) => concertRole.concert)
   concertRoles: ConcertRole[];
+
+  @OneToMany(() => Ticket, (ticket) => ticket.concert)
+  tickets: Ticket[];
+
+  @OneToMany(() => TicketCategory, (ticketCategory) => ticketCategory.concert)
+  ticketCategories: TicketCategory[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatName() {
+    this.concert_name = this.concert_name.toLowerCase();
+  }
 }

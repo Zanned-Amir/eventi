@@ -1,4 +1,6 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
@@ -57,6 +59,7 @@ export class UserAccount {
     name: 'role_id',
   })
   role: UserRole;
+
   @OneToOne(() => UserLoginData, (userLoginData) => userLoginData.userAccount, {
     cascade: true,
     onDelete: 'CASCADE',
@@ -88,4 +91,11 @@ export class UserAccount {
     },
   })
   permissions: Permission[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatNames() {
+    this.first_name = this.first_name.toLowerCase();
+    this.last_name = this.last_name.toLowerCase();
+  }
 }

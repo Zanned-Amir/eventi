@@ -1,4 +1,6 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
@@ -86,4 +88,11 @@ export class UserLoginData {
   })
   @JoinColumn({ name: 'user_id' })
   userAccount: UserAccount;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async fromatName() {
+    this.username = this.username.toLowerCase();
+    this.email = this.email.toLowerCase();
+  }
 }

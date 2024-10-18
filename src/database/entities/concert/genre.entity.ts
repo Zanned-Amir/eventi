@@ -1,4 +1,11 @@
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Artist } from './artist.entity';
 
 @Entity()
@@ -11,4 +18,10 @@ export class Genre {
   genre_name: string;
   @ManyToMany(() => Artist, (artist) => artist.genres)
   artists: Artist[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatGenreName() {
+    this.genre_name = this.genre_name.toUpperCase();
+  }
 }

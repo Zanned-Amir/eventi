@@ -1,4 +1,11 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { ConcertRole } from './concertRole.entity';
 
 @Entity()
@@ -20,4 +27,10 @@ export class ConcertMember {
   phone_number: string;
   @OneToMany(() => ConcertRole, (concertRole) => concertRole.concertMember)
   concertRoles: ConcertRole[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatName() {
+    this.full_name = this.full_name.toLowerCase();
+  }
 }

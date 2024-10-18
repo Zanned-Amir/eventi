@@ -6,7 +6,10 @@ export class ConcertGroup {
   @PrimaryGeneratedColumn()
   concert_group_id: number;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    unique: true,
+  })
   concert_group_name: string;
 
   @OneToMany(() => Concert, (concert) => concert.concertGroup)

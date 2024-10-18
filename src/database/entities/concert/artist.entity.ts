@@ -1,4 +1,6 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
   JoinTable,
@@ -31,4 +33,10 @@ export class Artist {
 
   @OneToMany(() => Concert, (concert) => concert.artists)
   concerts: Concert[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatArtistName() {
+    this.artist_name = this.artist_name.toUpperCase();
+  }
 }

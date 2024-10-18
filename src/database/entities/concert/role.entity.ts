@@ -1,4 +1,11 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { ConcertRole } from './concertRole.entity';
 
@@ -15,4 +22,10 @@ export class Role {
 
   @OneToMany(() => ConcertRole, (concertRole) => concertRole.role)
   concertRoles: ConcertRole[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatRoleName() {
+    this.role_name = this.role_name.toUpperCase();
+  }
 }

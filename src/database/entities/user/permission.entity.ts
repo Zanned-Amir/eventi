@@ -1,4 +1,11 @@
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserRole } from './userRole.entity';
 import { UserAccount } from './userAccount.entity';
 
@@ -20,6 +27,12 @@ export class Permission {
 
   @ManyToMany(() => UserAccount, (userAccount) => userAccount.permissions)
   users: UserAccount[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  formatPermissionName() {
+    this.permission_name = this.permission_name.toUpperCase();
+  }
 }
 
 export enum Permissions {
