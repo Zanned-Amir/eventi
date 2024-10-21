@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional } from 'class-validator';
 
 export class CreateTicketDto {
   @IsInt()
@@ -6,9 +6,6 @@ export class CreateTicketDto {
 
   @IsInt()
   ticket_category_id: number;
-
-  @IsString()
-  ticket_code: string;
 
   @IsOptional()
   @IsBoolean()

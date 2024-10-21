@@ -18,6 +18,7 @@ import { UserLoginData } from './userLoginData.entity';
 import { UserLoginDataExternal } from './userLoginDataExternal.entity';
 import { UserTokens } from './userTokens.entity';
 import { Permission } from './permission.entity';
+import { Order } from '../order';
 
 @Entity()
 export class UserAccount {
@@ -91,6 +92,9 @@ export class UserAccount {
     },
   })
   permissions: Permission[];
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders: Order[];
 
   @BeforeInsert()
   @BeforeUpdate()

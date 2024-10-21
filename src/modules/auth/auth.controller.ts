@@ -52,5 +52,7 @@ export class AuthController {
   async confirmAccount() {}
 
   @Get('profile')
-  async getProfile() {}
+  async getProfile(@CurrentUser() user) {
+    return user;
+  }
 }

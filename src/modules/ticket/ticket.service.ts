@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ticket, TicketCategory } from 'src/database/entities/ticket';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { CreateTicketDto } from './dto/CreateTicketDto';
 import { UpdateTicketDto } from './dto/UpdateTicketDto';
 import { CreateTicketCategoryDto } from './dto/CreateTicketCategoryDto';
 import { UpdateTicketCategoryDto } from './dto/UpdateTicketCategoryDto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class TicketService {
@@ -13,12 +14,76 @@ export class TicketService {
     @InjectRepository(Ticket) private ticketRepository: Repository<Ticket>,
     @InjectRepository(TicketCategory)
     private ticketCategoryRepository: Repository<TicketCategory>,
+    private readonly entityManger: EntityManager,
   ) {}
 
-  //ticket
+  private readonly MAX_RETRIES = 5;
 
   async createTicket(createTicketDto: CreateTicketDto) {
-    return await this.ticketRepository.save(createTicketDto);
+    let retryCount = 0;
+
+    while (retryCount < this.MAX_RETRIES) {
+      try {
+        return await this.entityManger.transaction(
+          async (transactionalEntityManager) => {
+            // Fetch the ticket category first
+            const ticketCategory = await transactionalEntityManager.findOne(
+              TicketCategory,
+              {
+                where: {
+                  ticket_category_id: createTicketDto.ticket_category_id,
+                },
+              },
+            );
+
+            if (!ticketCategory) {
+              throw new Error('Ticket category not found');
+            }
+
+            // Apply optimistic locking with the version from the fetched ticketCategory
+            await transactionalEntityManager.findOne(TicketCategory, {
+              where: { ticket_category_id: createTicketDto.ticket_category_id },
+              lock: { mode: 'optimistic', version: ticketCategory.version },
+            });
+
+            // Check if there are enough tickets available
+            if (ticketCategory.quantity < 1) {
+              throw new Error('No tickets available');
+            }
+
+            // Reduce the ticket category quantity
+            ticketCategory.quantity -= 1;
+
+            // Save the updated ticket category
+            await transactionalEntityManager.save(ticketCategory);
+
+            // Create a new ticket
+            const ticket_code = uuidv4();
+            const serial_code = uuidv4();
+
+            const ticket = this.ticketRepository.create({
+              ...createTicketDto,
+              ticket_code,
+              serial_code,
+            });
+
+            // Save the ticket
+            return await transactionalEntityManager.save(ticket);
+          },
+        );
+      } catch (error) {
+        if (error.name === 'OptimisticLockVersionMismatchError') {
+          retryCount++;
+          if (retryCount >= this.MAX_RETRIES) {
+            throw new Error(
+              'Failed to reserve a ticket due to concurrency issues.',
+            );
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
   }
 
   async updateTicket(ticketId: number, updateTicketDto: UpdateTicketDto) {

@@ -1,15 +1,7 @@
-import {
-  Column,
-  Entity,
-  ManyToOne,
-  JoinColumn,
-  PrimaryColumn,
-  BeforeInsert,
-} from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { Concert } from './concert.entity';
 import { Role } from './role.entity';
 import { ConcertMember } from './concertMember.entity';
-import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
 export class ConcertRole {
@@ -36,9 +28,4 @@ export class ConcertRole {
   @ManyToOne(() => ConcertMember, (concertMember) => concertMember.concertRoles)
   @JoinColumn({ name: 'concert_member_id' })
   concertMember: ConcertMember;
-
-  @BeforeInsert()
-  generateUIID() {
-    this.access_code = uuidv4();
-  }
 }

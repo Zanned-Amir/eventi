@@ -11,6 +11,7 @@ import {
   Venue,
 } from 'src/database/entities/concert';
 import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import {
   CreateGenreDto,
   UpdateGenreDto,
@@ -50,8 +51,8 @@ export class ConcertService {
   ) {}
 
   // Genre CRUD
-  async createGenre(genreData: CreateGenreDto) {
-    const genre = this.genreRepository.create(genreData);
+  async createGenre(createGenreDto: CreateGenreDto) {
+    const genre = this.genreRepository.create(createGenreDto);
     return await this.genreRepository.save(genre);
   }
 
@@ -65,8 +66,11 @@ export class ConcertService {
     });
   }
 
-  async updateGenre(id: number, updateData: UpdateGenreDto): Promise<Genre> {
-    await this.genreRepository.update(id, updateData);
+  async updateGenre(
+    id: number,
+    updateGenreDto: UpdateGenreDto,
+  ): Promise<Genre> {
+    await this.genreRepository.update(id, updateGenreDto);
     return await this.findGenreById(id);
   }
 
@@ -75,12 +79,12 @@ export class ConcertService {
   }
 
   // Concert CRUD
-  async createConcert(concertData: CreateConcertDto) {
-    const concert = this.concertRepository.create(concertData);
+  async createConcert(createConcertDto: CreateConcertDto) {
+    const concert = this.concertRepository.create(createConcertDto);
     return await this.concertRepository.save(concert);
   }
 
-  async findAllConcerts(): Promise<Concert[]> {
+  async findAllConcerts() {
     return await this.concertRepository.find();
   }
 
@@ -90,8 +94,8 @@ export class ConcertService {
     });
   }
 
-  async updateConcert(id: number, updateData: UpdateConcertDto) {
-    await this.concertRepository.update(id, updateData);
+  async updateConcert(id: number, updateConcertDto: UpdateConcertDto) {
+    await this.concertRepository.update(id, updateConcertDto);
     return await this.findConcertById(id);
   }
 
@@ -100,8 +104,10 @@ export class ConcertService {
   }
 
   // Concert Group CRUD
-  async createConcertGroup(groupData: CreateConcertGroupDto) {
-    const concertGroup = this.concertGroupRepository.create(groupData);
+  async createConcertGroup(createConcertGroupDto: CreateConcertGroupDto) {
+    const concertGroup = this.concertGroupRepository.create(
+      createConcertGroupDto,
+    );
     return await this.concertGroupRepository.save(concertGroup);
   }
 
@@ -125,8 +131,10 @@ export class ConcertService {
   }
 
   // Concert Member CRUD
-  async createConcertMember(memberData: CreateConcertMemberDto) {
-    const concertMember = this.concertMemberRepository.create(memberData);
+  async createConcertMember(createConcertMemberDto: CreateConcertMemberDto) {
+    const concertMember = this.concertMemberRepository.create(
+      createConcertMemberDto,
+    );
     return await this.concertMemberRepository.save(concertMember);
   }
 
@@ -140,8 +148,11 @@ export class ConcertService {
     });
   }
 
-  async updateConcertMember(id: number, updateData: UpdateConcertMemberDto) {
-    await this.concertMemberRepository.update(id, updateData);
+  async updateConcertMember(
+    id: number,
+    updateConcertMemberDto: UpdateConcertMemberDto,
+  ) {
+    await this.concertMemberRepository.update(id, updateConcertMemberDto);
     return await this.findConcertMemberById(id);
   }
 
@@ -150,8 +161,11 @@ export class ConcertService {
   }
 
   // Concert Role CRUD
-  async createConcertRole(roleData: CreateConcertRoleDto) {
-    const concertRole = this.concertRoleRepository.create(roleData);
+  async createConcertRole(createConcertRoleDto: CreateConcertRoleDto) {
+    const concertRole = this.concertRoleRepository.create({
+      ...createConcertRoleDto,
+      access_code: uuidv4(),
+    });
     return await this.concertRoleRepository.save(concertRole);
   }
 

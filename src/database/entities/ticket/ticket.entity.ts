@@ -1,16 +1,16 @@
 import {
-  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
 import { Concert } from '../concert';
 import { TicketCategory } from './ticketCategory.entity';
+import { OrderTicket } from '../order/orderTicket.entity';
 
 @Entity()
 export class Ticket {
@@ -56,8 +56,6 @@ export class Ticket {
   @JoinColumn({ name: 'ticket_category_id' })
   ticketCategory: TicketCategory;
 
-  @BeforeInsert()
-  generateUIID() {
-    this.serial_code = uuidv4();
-  }
+  @OneToMany(() => OrderTicket, (orderTicket) => orderTicket.ticket)
+  orderTickets: OrderTicket[];
 }

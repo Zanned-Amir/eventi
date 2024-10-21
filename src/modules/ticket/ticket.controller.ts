@@ -23,12 +23,22 @@ export class TicketController {
   @Public()
   @Get()
   async getTickets() {
-    console.log('getTickets');
     const tickets = await this.ticketService.getTickets();
     return {
       status: 'success',
       count: tickets.length,
       data: tickets,
+    };
+  }
+
+  @Public()
+  @Get('category')
+  async getTicketCategories() {
+    const ticketCategories = await this.ticketService.getTicketCategories();
+    return {
+      status: 'success',
+      count: ticketCategories.length,
+      data: ticketCategories,
     };
   }
 
@@ -82,17 +92,6 @@ export class TicketController {
   }
 
   // Ticket category endpoints
-
-  @Public()
-  @Get('category')
-  async getTicketCategories() {
-    const ticketCategories = await this.ticketService.getTicketCategories();
-    return {
-      status: 'success',
-      count: ticketCategories.length,
-      data: ticketCategories,
-    };
-  }
 
   @Post('category')
   async createTicketCategory(
