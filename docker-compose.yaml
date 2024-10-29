@@ -11,5 +11,17 @@ services:
     volumes:
       - postgres:/var/lib/postgresql/data
 
+  rabbitmq:
+    image: rabbitmq:management
+    environment:
+      RABBITMQ_DEFAULT_USER: amiroso
+      RABBITMQ_DEFAULT_PASS: 'amiroso'
+    ports:
+      - '5672:5672' # RabbitMQ default port
+      - '15672:15672' # RabbitMQ management console
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+
 volumes:
   postgres:
+  rabbitmq:
