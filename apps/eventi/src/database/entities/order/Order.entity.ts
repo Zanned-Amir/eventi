@@ -33,10 +33,16 @@ export class Order {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'completed', 'cancelled'],
+    enum: ['pending', 'completed', 'cancelled', 'failed'],
     default: 'pending',
   })
   status: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  cancel_reason: string;
 
   @Column({
     type: 'decimal',

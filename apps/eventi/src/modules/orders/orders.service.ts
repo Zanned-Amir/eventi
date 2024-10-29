@@ -7,6 +7,7 @@ import { CreateOrderDto } from './dto/CreateOrderDto';
 import { ClientProxy } from '@nestjs/microservices';
 import { ORDERS_SERVICE } from '@app/common/constants/service';
 import { v4 as uuidv4 } from 'uuid';
+import { PaymentWebhookStat } from '@app/common/constants/state';
 
 @Injectable()
 export class OrdersService {
@@ -194,6 +195,75 @@ export class OrdersService {
     } catch (error) {
       this.logger.error('Failed to handle order billing', error.stack);
       throw new Error('Failed to handle order billing');
+    }
+  }
+
+  async handleOrderFailed(data: any) {
+    const order_id = Number(data.order_id);
+    const tickets = JSON.parse(data.session_object.metadata.products);
+
+    try {
+      await this.entityManger.transaction(
+        async (transactionalEntityManager) => {
+          const order = await transactionalEntityManager.findOne(
+            this.orderRepository.target,
+            {
+              where: { order_id },
+            },
+          );
+          if (!order) {
+            throw new Error('Order not found');
+          }
+
+          if (order.status !== 'pending') {
+            this.logger.log(`Order ${order_id} has already been processed`);
+            throw new Error('Order has already been processed');
+          }
+
+          const newStatus =
+            data.state === PaymentWebhookStat.CANCELED ? 'canceled' : 'failed';
+
+          // Update the order status within the transaction
+          await transactionalEntityManager.update(
+            this.orderRepository.target,
+            order_id,
+            {
+              status: newStatus,
+              cancel_reason: data.reason,
+            },
+          );
+
+          // Iterate through the tickets and update quantities within the transaction
+          for (const ticket of tickets) {
+            const ticketCategory = await transactionalEntityManager.findOne(
+              this.ticketCategoryRepository.target,
+              {
+                where: { ticket_category_id: ticket.product_id },
+              },
+            );
+
+            if (!ticketCategory) {
+              throw new Error(
+                `Ticket category not found: ${ticket.product_id}`,
+              );
+            }
+
+            // Adjust the ticket quantity within the transaction
+            ticketCategory.quantity += ticket.quantity;
+            await transactionalEntityManager.save(
+              this.ticketCategoryRepository.target,
+              ticketCategory,
+            );
+          }
+        },
+      );
+
+      this.logger.log(
+        `Order ${order_id} has been ${data.state === PaymentWebhookStat.CANCELED ? 'canceled' : 'failed'}. Reason: ${data.reason}`,
+      );
+    } catch (error) {
+      this.logger.error('Failed to handle order failure', error.stack);
+      throw new Error('Failed to handle order failure');
     }
   }
 }

@@ -21,7 +21,6 @@ import {
 import { FindUsersDto } from './dto/FindUsersDto';
 import { hash } from 'bcrypt';
 import { CreateUserTokenDto } from './dto/CreateUserTokenDto';
-
 @Injectable()
 export class UsersService {
   constructor(
@@ -38,16 +37,7 @@ export class UsersService {
     private readonly entityManger: EntityManager,
   ) {}
 
-  async createUserAccount(createUserAccountDto: CreateUserAccountDto) {
-    const userAccount = this.userAccountRepository.create(createUserAccountDto);
-    return this.userAccountRepository.save(userAccount);
-  }
-
-  async getUserAccount(id: number) {
-    return this.userAccountRepository.findOne({
-      where: { user_id: id },
-    });
-  }
+  // crud user (userAccount + userLoginData)
   async getUsers(query: FindUsersDto): Promise<UserAccount[]> {
     const queryBuilder = this.userAccountRepository
       .createQueryBuilder('user')
@@ -226,6 +216,7 @@ export class UsersService {
       .createQueryBuilder('userAccount')
       .leftJoinAndSelect('userAccount.role', 'role')
       .leftJoinAndSelect('userAccount.userLoginData', 'userLoginData')
+      .leftJoinAndSelect('userAccount.permissions', 'permissions')
       .where('userAccount.user_id = :id', { id })
       .select([
         'userAccount.user_id',
@@ -237,6 +228,7 @@ export class UsersService {
         'userLoginData.username',
         'userLoginData.is_confirmed',
         'userLoginData.account_status',
+        'permissions',
       ])
       .getOne();
 
@@ -256,7 +248,24 @@ export class UsersService {
         role_name: user.role?.role_name,
         role_id: user.role?.role_id,
       },
+      permissions: user.permissions?.map((permission) => ({
+        permission_id: permission.permission_id,
+        permission_name: permission.permission_name,
+      })),
     };
+  }
+
+  // CRUD User Account
+
+  async createUserAccount(createUserAccountDto: CreateUserAccountDto) {
+    const userAccount = this.userAccountRepository.create(createUserAccountDto);
+    return this.userAccountRepository.save(userAccount);
+  }
+
+  async getUserAccount(id: number) {
+    return this.userAccountRepository.findOne({
+      where: { user_id: id },
+    });
   }
 
   async updateUserAccount(
@@ -281,6 +290,8 @@ export class UsersService {
     return { deleted: true };
   }
 
+  // CRUD User Login Data
+
   async getUserLoginData(id: number) {
     return this.userLoginDataRepository.findOne({
       where: { user_id: id },
@@ -292,6 +303,7 @@ export class UsersService {
       .createQueryBuilder('userLoginData')
       .leftJoinAndSelect('userLoginData.userAccount', 'userAccount')
       .leftJoinAndSelect('userAccount.role', 'role')
+      .leftJoinAndSelect('userAccount.permissions', 'permissions')
       .where('userLoginData.email = :email', { email })
       .select([
         'userLoginData.user_id',
@@ -301,6 +313,7 @@ export class UsersService {
         'userLoginData.account_status',
         'userAccount.role_id',
         'role.role_name',
+        'permissions',
       ])
       .getOne();
 
@@ -315,6 +328,12 @@ export class UsersService {
           role_id: userLoginData.userAccount?.role_id,
           role_name: userLoginData.userAccount?.role?.role_name,
         },
+        permissions: userLoginData.userAccount?.permissions?.map(
+          (permission) => ({
+            permission_id: permission.permission_id,
+            permission_name: permission.permission_name,
+          }),
+        ),
       };
     }
 
@@ -330,7 +349,6 @@ export class UsersService {
     return { deleted: true };
   }
 
-  // Create User Login Data
   async createUserLoginData(createUserLoginDataDto: CreateUserLoginDataDto) {
     const userLoginData = this.userLoginDataRepository.create(
       createUserLoginDataDto,
@@ -338,7 +356,6 @@ export class UsersService {
     return this.userLoginDataRepository.save(userLoginData);
   }
 
-  // Update User Login Data
   async updateUserLoginData(
     id: number,
     updateUserLoginDataDto: UpdateUserLoginDataDto,
@@ -349,32 +366,94 @@ export class UsersService {
     });
   }
 
-  // Create User Role
-  async createUserRole(createUserRoleDto: CreateUserRoleDto) {
+  // CRUD App Role
+  async createAppRole(createUserRoleDto: CreateUserRoleDto) {
     const userRole = this.userRoleRepository.create(createUserRoleDto);
     return this.userRoleRepository.save(userRole);
   }
 
-  // Update User Role
-  async updateUserRole(id: number, updateUserRoleDto: UpdateUserRoleDto) {
+  async updateAppRole(id: number, updateUserRoleDto: UpdateUserRoleDto) {
     await this.userRoleRepository.update(id, updateUserRoleDto);
     return this.userRoleRepository.findOne({
       where: { role_id: id },
     });
   }
 
-  // Create Permission
+  async getAppRoles() {
+    return this.userRoleRepository.find();
+  }
+
+  async getAppRole(id: number) {
+    return this.userRoleRepository.findOne({
+      where: { role_id: id },
+    });
+  }
+
+  async deleteAppRole(id: number) {
+    const result = await this.userRoleRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Role with ID ${id} not found`);
+    }
+
+    return { deleted: true };
+  }
+
+  //  crud Permission
   async createPermission(createPermissionDto: CreatePermissionDto) {
     const permission = this.permissionRepository.create(createPermissionDto);
     return this.permissionRepository.save(permission);
   }
 
-  // Update Permission
   async updatePermission(id: number, updatePermissionDto: UpdatePermissionDto) {
     await this.permissionRepository.update(id, updatePermissionDto);
     return this.permissionRepository.findOne({
       where: { permission_id: id },
     });
+  }
+
+  async getPermissions() {
+    return this.permissionRepository.find();
+  }
+
+  async getPermission(id: number) {
+    return this.permissionRepository.findOne({
+      where: { permission_id: id },
+    });
+  }
+
+  async deletePermission(id: number) {
+    const result = await this.permissionRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Permission with ID ${id} not found`);
+    }
+
+    return { deleted: true };
+  }
+
+  async getUserPermissions(id: number) {
+    const user = await this.userAccountRepository.findOne({
+      where: { user_id: id },
+      relations: ['permissions'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user.permissions;
+  }
+
+  async getUserRolePermissions(role_id: number) {
+    const role = await this.userRoleRepository.findOne({
+      where: { role_id },
+      relations: ['permissions'],
+    });
+
+    if (!role) {
+      throw new NotFoundException(`Role with ID ${role_id} not found`);
+    }
+
+    return role.permissions;
   }
 
   async verifyUserRefreshToken(user_id: number, device_info: string) {
@@ -404,6 +483,7 @@ export class UsersService {
       .createQueryBuilder('userToken')
       .leftJoinAndSelect('userToken.user', 'user')
       .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.permissions', 'permissions')
       .where('userToken.user_id = :user_id', { user_id })
       .andWhere('userToken.device_info = :device_info', { device_info })
       .andWhere('userToken.is_in_blacklist = false')
@@ -414,6 +494,7 @@ export class UsersService {
         'user.birth_date', //DON'T remove this line  !!
         'role.role_name',
         'role.role_id',
+        'permissions',
       ])
       .getOne();
 
@@ -427,10 +508,13 @@ export class UsersService {
           role_name: userToken.user.role?.role_name,
           role_id: userToken.user.role?.role_id,
         },
+        permissions: userToken.user.permissions?.map((permission) => ({
+          permission_id: permission.permission_id,
+          permission_name: permission.permission_name,
+        })),
       };
-
-      return null; // Return null if no token is found
     }
+    return null;
   }
 
   async blackList(user_id: number, device_info: string) {
@@ -440,5 +524,30 @@ export class UsersService {
     );
 
     return result;
+  }
+
+  async assignPermissionToUser(user_id: number, permission_id: number) {
+    const user = await this.userAccountRepository.findOne({
+      where: { user_id },
+      relations: ['permissions'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${user_id} not found`);
+    }
+
+    const permission = await this.permissionRepository.findOne({
+      where: { permission_id },
+    });
+
+    if (!permission) {
+      throw new NotFoundException(
+        `Permission with ID ${permission_id} not found`,
+      );
+    }
+
+    user.permissions.push(permission);
+
+    return this.userAccountRepository.save(user);
   }
 }

@@ -22,6 +22,14 @@ export class Payment {
   amount: number;
 
   @Column({
+    type: 'enum',
+    nullable: true,
+    enum: ['paid', 'refunded', 'failed', 'pending'],
+    default: 'pending',
+  })
+  status: string;
+
+  @Column({
     type: 'timestamp',
     nullable: true,
   })

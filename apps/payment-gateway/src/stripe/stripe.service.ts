@@ -14,6 +14,7 @@ import { Payment } from '../database/entities/payment.entity';
 import { Repository } from 'typeorm';
 import { PAYMENT_GATEWAY_SERVICE } from '@app/common/constants/service';
 import { ClientProxy } from '@nestjs/microservices';
+import { PaymentWebhookStat } from '@app/common/constants/state';
 
 @Injectable()
 export class StripeService {
@@ -67,6 +68,7 @@ export class StripeService {
           order_id: createCheckoutSessionDto.order_id,
           products: JSON.stringify(productsMetaData),
         },
+        expires_at: Math.floor(Date.now() / 1000) + 60 * 30,
       });
 
       this.logger.log('Checkout session created successfully');
@@ -93,10 +95,13 @@ export class StripeService {
       );
 
       this.logger.log('Webhook received', event.type);
+
       switch (event.type) {
-        case 'checkout.session.completed':
+        case 'checkout.session.completed': {
           const session = event.data.object;
           this.logger.log('Checkout session completed', session);
+
+          // Process successful payment
           const newPayment: Partial<Payment> = {
             order_id: Number(session.metadata.order_id),
             user_id: Number(session.metadata.user_id),
@@ -105,9 +110,9 @@ export class StripeService {
             payment_date: new Date(),
             session_object: session,
             payment_method: 'credit_card',
+            status: 'paid',
           };
 
-          // Use create and save separately
           const payment = this.paymentRepository.create(newPayment);
           await this.paymentRepository.save(payment);
 
@@ -116,25 +121,41 @@ export class StripeService {
             user_id: newPayment.user_id,
             payment_id: payment.payment_id,
             session_object: newPayment.session_object,
+            state: PaymentWebhookStat.SUCCEEDED,
           });
 
           break;
-        case 'checkout.session.expired':
-          const sessionExpired = event.data.object;
-          this.logger.log('Checkout session expired', sessionExpired);
+        }
 
-          this.paymentClient.emit('payment-failed', {
-            order_id: Number(sessionExpired.metadata.order_id),
-            user_id: Number(sessionExpired.metadata.user_id),
-            session_object: sessionExpired,
-            raison: 'Checkout session expired',
-          });
-          break;
-
-        case 'payment_intent.payment_failed':
+        case 'payment_intent.payment_failed': {
           const paymentFailed = event.data.object;
           this.logger.log('Payment failed', paymentFailed);
+
+          // Emit an event indicating the payment failed
+          this.paymentClient.emit('payment-failed', {
+            order_id: Number(paymentFailed.metadata.order_id),
+            user_id: Number(paymentFailed.metadata.user_id),
+            session_object: paymentFailed,
+            reason: 'Payment failed due to insufficient funds or other issues',
+            state: PaymentWebhookStat.FAILED,
+          });
           break;
+        }
+
+        case 'payment_intent.canceled': {
+          const paymentCanceled = event.data.object;
+          this.logger.log('Payment canceled', paymentCanceled);
+
+          // Emit an event indicating the payment was canceled
+          this.paymentClient.emit('payment-failed', {
+            order_id: Number(paymentCanceled.metadata.order_id),
+            user_id: Number(paymentCanceled.metadata.user_id),
+            session_object: paymentCanceled,
+            reason: 'Payment was canceled by the user',
+            state: PaymentWebhookStat.CANCELED,
+          });
+          break;
+        }
 
         default:
           this.logger.log('Unhandled event', event.type);

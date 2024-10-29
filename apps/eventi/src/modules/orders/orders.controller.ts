@@ -46,4 +46,9 @@ export class OrdersController {
   async handleOrderBilled(@Payload() data: any) {
     return this.ordersService.handleOrderBilled(data);
   }
+
+  @EventPattern('payment-failed')
+  async handleOrderFailed(@Payload() data: any) {
+    return this.ordersService.handleOrderFailed(data);
+  }
 }
