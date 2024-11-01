@@ -6,7 +6,7 @@ import { Payment } from '../database/entities/payment.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import {
   PAYMENT_GATEWAY_SERVICE,
-  PAYMENT_GATEWAY_QUEUE,
+  PAYMENT_ORDER_QUEUE,
 } from '@app/common/constants/service';
 
 @Module({
@@ -18,7 +18,7 @@ import {
         transport: Transport.RMQ,
         options: {
           urls: ['amqp://amiroso:amiroso@localhost:5672'],
-          queue: PAYMENT_GATEWAY_QUEUE,
+          queue: PAYMENT_ORDER_QUEUE,
         },
       },
     ]),
@@ -40,7 +40,7 @@ export class StripeModule {
           inject: [ConfigService],
         },
       ],
-      exports: ['STRIPE_API_KEY'], // Export the STRIPE_API_KEY so it can be used in other modules
+      exports: ['STRIPE_API_KEY'],
     };
   }
 }

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { UserAccount } from '../user';
 import { OrderTicket } from './orderTicket.entity';
+import { OrderTicketCategory } from './orderTicketCategory.entity';
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn()
@@ -85,4 +86,10 @@ export class Order {
 
   @OneToMany(() => OrderTicket, (orderTicket) => orderTicket.order)
   orderTickets: OrderTicket[];
+
+  @OneToMany(
+    () => OrderTicketCategory,
+    (orderTicketCategory) => orderTicketCategory.order,
+  )
+  orderTicketCategories: OrderTicketCategory[];
 }

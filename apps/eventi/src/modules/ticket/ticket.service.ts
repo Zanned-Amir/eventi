@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ticket, TicketCategory } from '../../database/entities/ticket';
 import { Repository, EntityManager } from 'typeorm';
@@ -7,6 +7,8 @@ import { UpdateTicketDto } from './dto/UpdateTicketDto';
 import { CreateTicketCategoryDto } from './dto/CreateTicketCategoryDto';
 import { UpdateTicketCategoryDto } from './dto/UpdateTicketCategoryDto';
 import { v4 as uuidv4 } from 'uuid';
+import * as QRCode from 'qrcode';
+import { hash } from 'bcrypt';
 
 @Injectable()
 export class TicketService {
@@ -100,6 +102,34 @@ export class TicketService {
       });
     } else {
       throw new Error('Ticket not found');
+    }
+  }
+
+  async convertTicketToQRCode(ticketId: number) {
+    const ticket = await this.ticketRepository.findOne({
+      where: {
+        ticket_id: ticketId,
+      },
+    });
+
+    if (!ticket) {
+      throw new HttpException('Ticket not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (!ticket.ticket_code) {
+      throw new HttpException('Ticket code is missing', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const hashedTicketCode = await hash(ticket.ticket_code, 10);
+      const qrCode = await QRCode.toDataURL(hashedTicketCode);
+      return qrCode;
+    } catch (error) {
+      console.error('Error generating QR Code:', error);
+      throw new HttpException(
+        'Failed to generate QR Code',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

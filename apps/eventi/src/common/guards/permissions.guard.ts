@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { Permissions } from '../../database/entities/user/permission.entity';
@@ -28,16 +34,18 @@ export class PermissionGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const user = req.user;
 
-    const userPermissions = user.permissions.map(
-      (permission) => permission.permission_name,
+    const userPermissions = user.permissions.map((permission) =>
+      permission.permission_name.toUpperCase(),
     );
     const hasPermission = requiredPermissions.some((permission) =>
       userPermissions.includes(permission),
     );
     if (!hasPermission) {
-      return false;
+      throw new HttpException(
+        'You do not have permission to perform this action',
+        HttpStatus.FORBIDDEN,
+      );
     }
-
     return true;
   }
 }

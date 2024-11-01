@@ -26,6 +26,7 @@ import { JwtRefreshAuthGuard } from '../../common/guards/jwt-refresh-auth.guard'
 import { Public } from '../../common/decorators/public.decorator';
 import { UsersService } from '../users/users.service';
 import { UpdateRoleDto } from '../concert/dto';
+import { EmailConfirmationDto } from './dto/EmailConfirmationDto';
 
 @Controller('auth')
 export class AuthController {
@@ -129,5 +130,50 @@ export class AuthController {
   @Delete('roles/:id')
   async deleteRoles(@Param('id', ParseIntPipe) id: number) {
     return await this.usersService.deleteAppRole(id);
+  }
+
+  @Public()
+  @Post('email-confirmation-send/:email')
+  async emailConfirmation(@Param('email') email: string) {
+    return await this.authService.confirmEmail(email);
+  }
+
+  @Public()
+  @Post('confirm-email/:email/:confirmation_token')
+  async confirmEmail(
+    @Param('email') email: string,
+    @Param('confirmation_token') confirmation_token: string,
+  ) {
+    return await this.authService.confirmEmailWithToken(
+      confirmation_token,
+      email,
+    );
+  }
+
+  @Public()
+  @Post('password-reset')
+  async passwordReset(@Body() EmailConfirmationDto: EmailConfirmationDto) {
+    const email = EmailConfirmationDto.email;
+    return await this.authService.resetPassword(email);
+  }
+
+  @Public()
+  @Post('password-change/:email/:recovery_token')
+  async passwordChange(
+    @Body('newPassword') newPassword: string,
+    @Param('email') email: string,
+    @Param('recovery_token') recovery_token: string,
+  ) {
+    return await this.authService.changePasswordWithToken({
+      newPassword,
+      recovery_token,
+      email,
+    });
+  }
+
+  @Public()
+  @Post('test-email')
+  async testEmail() {
+    return await this.authService.test();
   }
 }

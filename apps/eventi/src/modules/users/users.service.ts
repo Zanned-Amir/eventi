@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import {
@@ -19,7 +24,7 @@ import {
   UpdatePermissionDto,
 } from './dto/index';
 import { FindUsersDto } from './dto/FindUsersDto';
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { CreateUserTokenDto } from './dto/CreateUserTokenDto';
 @Injectable()
 export class UsersService {
@@ -340,6 +345,12 @@ export class UsersService {
     return userLoginData;
   }
 
+  async _getUserLoginDataByEmail(email: string) {
+    return this.userLoginDataRepository.findOne({
+      where: { email },
+    });
+  }
+
   async deleteUserLoginData(id: number) {
     const result = await this.userLoginDataRepository.delete(id);
     if (result.affected === 0) {
@@ -364,6 +375,14 @@ export class UsersService {
     return this.userLoginDataRepository.findOne({
       where: { user_id: id },
     });
+  }
+
+  async updateUserPassword(id: number, password: string) {
+    const result = await this.userLoginDataRepository.update(id, {
+      password,
+    });
+    if (result.affected > 0) return true;
+    return false;
   }
 
   // CRUD App Role
@@ -549,5 +568,206 @@ export class UsersService {
     user.permissions.push(permission);
 
     return this.userAccountRepository.save(user);
+  }
+
+  async removePermissionFromUser(user_id: number, permission_id: number) {
+    const user = await this.userAccountRepository.findOne({
+      where: { user_id },
+      relations: ['permissions'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${user_id} not found`);
+    }
+
+    const permission = await this.permissionRepository.findOne({
+      where: { permission_id },
+    });
+
+    if (!permission) {
+      throw new NotFoundException(
+        `Permission with ID ${permission_id} not found`,
+      );
+    }
+
+    user.permissions = user.permissions.filter(
+      (p) => p.permission_id !== permission_id,
+    );
+
+    return this.userAccountRepository.save(user);
+  }
+
+  async assignPermissionToRole(role_id: number, permission_id: number) {
+    const role = await this.userRoleRepository.findOne({
+      where: { role_id },
+      relations: ['permissions'],
+    });
+
+    if (!role) {
+      throw new NotFoundException(`Role with ID ${role_id} not found`);
+    }
+
+    const permission = await this.permissionRepository.findOne({
+      where: { permission_id },
+    });
+
+    if (!permission) {
+      throw new NotFoundException(
+        `Permission with ID ${permission_id} not found`,
+      );
+    }
+
+    role.permissions.push(permission);
+
+    return this.userRoleRepository.save(role);
+  }
+
+  async removePermissionFromRole(role_id: number, permission_id: number) {
+    const role = await this.userRoleRepository.findOne({
+      where: { role_id },
+      relations: ['permissions'],
+    });
+
+    if (!role) {
+      throw new NotFoundException(`Role with ID ${role_id} not found`);
+    }
+
+    const permission = await this.permissionRepository.findOne({
+      where: { permission_id },
+    });
+
+    if (!permission) {
+      throw new NotFoundException(
+        `Permission with ID ${permission_id} not found`,
+      );
+    }
+
+    role.permissions = role.permissions.filter(
+      (p) => p.permission_id !== permission_id,
+    );
+
+    return this.userRoleRepository.save(role);
+  }
+
+  async changePassword(
+    OldPassword: string,
+    NewPassword: string,
+    user_id: number,
+  ) {
+    let hashedPassword;
+    const userLoginData = await this.userLoginDataRepository.findOneBy({
+      user_id,
+    });
+    if (await compare(OldPassword, (await userLoginData).password)) {
+      hashedPassword = await hash(NewPassword, 10);
+    } else {
+      throw new HttpException('Invalid password', HttpStatus.BAD_REQUEST);
+    }
+    const result = await this.userLoginDataRepository.update(user_id, {
+      password: hashedPassword,
+    });
+
+    if (result.affected > 0) {
+      return {
+        message: 'Password changed successfully',
+        email: userLoginData.email,
+      };
+    }
+    return null;
+  }
+
+  async changePasswordByRecoveryToken(
+    newPassword: string,
+    token: string,
+    email: string,
+  ) {
+    const user = await this.userLoginDataRepository.findOneBy({
+      email,
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    // add logic to check if token is expired  10min
+    if (user.isRecoveredTokenExpired()) {
+      throw new HttpException('Token expired', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!(await compare(token, user.recovery_token))) {
+      throw new HttpException('Invalid recovery token', HttpStatus.BAD_REQUEST);
+    }
+
+    const hashedPassword = await hash(newPassword, 10);
+
+    const result = await this.userLoginDataRepository.update(user.user_id, {
+      password: hashedPassword,
+      recovery_token: null,
+      recovery_token_timestamp: null,
+    });
+
+    if (result.affected > 0) {
+      return { email: user.email, message: 'Password changed successfully' };
+    }
+    return null;
+  }
+
+  async confirmEmailByToken(email: string, token: string) {
+    const user = await this.userLoginDataRepository.findOneBy({ email });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (user.is_confirmed) {
+      throw new HttpException('User already confirmed', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!(await compare(token, user.confirmation_token))) {
+      throw new HttpException(
+        'Invalid confirmation token',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const result = await this.userLoginDataRepository.update(user.user_id, {
+      is_confirmed: true,
+      confirmation_token: null,
+      token_generation_timestamp: null,
+    });
+
+    if (result.affected > 0) {
+      return { email: user.email, message: 'Email confirmed successfully' };
+    }
+    return null;
+  }
+
+  async updateRecoveryCred(
+    user_id: number,
+    recovery_token: any,
+    recovery_token_timestamp: Date,
+  ) {
+    const result = await this.userLoginDataRepository.update(user_id, {
+      recovery_token,
+      recovery_token_timestamp,
+    });
+
+    if (result.affected > 0) {
+      return true;
+    }
+    return false;
+  }
+
+  async updateConfirmationCred(
+    user_id: number,
+    confirmation_token: any,
+    token_generation_timestamp: Date,
+  ) {
+    const result = await this.userLoginDataRepository.update(user_id, {
+      confirmation_token,
+      token_generation_timestamp,
+    });
+
+    if (result.affected > 0) {
+      return true;
+    }
+    return false;
   }
 }

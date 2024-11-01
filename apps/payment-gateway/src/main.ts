@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { PaymentGatewayModule } from './payment-gateway.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ORDER_QUEUE } from '@app/common/constants/service';
 import { ConfigService } from '@nestjs/config';
+import { ORDER_PAYMENT_QUEUE } from '../../../libs/common/src/constants/service';
 
 async function bootstrap() {
   const app = await NestFactory.create(PaymentGatewayModule, {
@@ -12,7 +12,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: ['amqp://amiroso:amiroso@localhost:5672'],
-      queue: ORDER_QUEUE,
+      queue: ORDER_PAYMENT_QUEUE,
     },
   });
   await app.startAllMicroservices();

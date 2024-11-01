@@ -1,6 +1,5 @@
 import {
   IsBoolean,
-  IsDate,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -21,22 +20,6 @@ export class CreateUserLoginDataDto {
   @IsString()
   @IsNotEmpty()
   email: string;
-
-  @IsOptional()
-  @IsString()
-  confirmation_token?: string;
-
-  @IsOptional()
-  @IsDate()
-  token_generation_date?: Date;
-
-  @IsOptional()
-  @IsString()
-  recovery_token?: string;
-
-  @IsOptional()
-  @IsDate()
-  recovery_token_generation_date?: Date;
 
   @IsOptional()
   @IsBoolean()

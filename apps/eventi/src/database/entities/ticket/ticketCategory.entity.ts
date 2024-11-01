@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Concert } from '../concert';
 import { Ticket } from './ticket.entity';
+import { OrderTicketCategory } from '../order/orderTicketCategory.entity';
 
 @Entity()
 export class TicketCategory {
@@ -62,6 +63,12 @@ export class TicketCategory {
   @ManyToOne(() => Concert, (concert) => concert.ticketCategories)
   @JoinColumn({ name: 'concert_id' })
   concert: Concert;
+
+  @OneToMany(
+    () => OrderTicketCategory,
+    (orderTicketCategory) => orderTicketCategory.ticketCategory,
+  )
+  orderTicketCategories: OrderTicketCategory[];
 
   @BeforeInsert()
   @BeforeUpdate()

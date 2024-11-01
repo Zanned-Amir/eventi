@@ -1,3 +1,4 @@
 import { OrderTicket } from './orderTicket.entity';
 import { Order } from './Order.entity';
-export { OrderTicket, Order };
+import { OrderTicketCategory } from './orderTicketCategory.entity';
+export { OrderTicket, Order, OrderTicketCategory };

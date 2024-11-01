@@ -24,6 +24,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     let user;
     try {
       user = await this.UsersService.getUser(payload.user_id);
+
+      if (user.is_confirmed !== true) {
+        throw new UnauthorizedException('User is not confirmed');
+      }
     } catch {
       throw new UnauthorizedException('Invalid token');
     }

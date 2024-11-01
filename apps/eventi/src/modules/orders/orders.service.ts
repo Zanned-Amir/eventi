@@ -1,5 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Order, OrderTicket } from '../../database/entities/order';
+import {
+  Order,
+  OrderTicket,
+  OrderTicketCategory,
+} from '../../database/entities/order';
 import { Repository, EntityManager } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ticket, TicketCategory } from '../../database/entities/ticket';
@@ -26,6 +30,9 @@ export class OrdersService {
 
     @InjectRepository(TicketCategory)
     private ticketCategoryRepository: Repository<TicketCategory>,
+
+    @InjectRepository(OrderTicketCategory)
+    private orderTicketCategoryRepository: Repository<OrderTicketCategory>,
 
     private readonly entityManger: EntityManager,
   ) {}
@@ -105,7 +112,20 @@ export class OrdersService {
               delivery_email_address: createOrderDto.delivery_email_address,
             });
 
-            order = await transactionalEntityManager.save(order); // Save the order and update the variable
+            order = await transactionalEntityManager.save(order);
+
+            await transactionalEntityManager
+              .createQueryBuilder()
+              .insert()
+              .into(OrderTicketCategory)
+              .values(
+                ticketDetails.map((ticket) => ({
+                  order_id: order.order_id,
+                  ticket_category_id: ticket.product_id,
+                  quantity: ticket.quantity,
+                })),
+              )
+              .execute();
           },
         );
 
@@ -139,11 +159,13 @@ export class OrdersService {
           error.message.includes('Not enough tickets available') ||
           error.message.includes('Ticket category not found')
         ) {
-          throw error; // Propagate critical errors
+          throw error;
         }
 
         retryCount++;
         if (retryCount === this.MAX_RETRIES) {
+          Logger.error('Max retries reached. Please try again later.', error);
+
           throw new Error('Max retries reached. Please try again later.');
         }
       }
@@ -248,7 +270,6 @@ export class OrdersService {
               );
             }
 
-            // Adjust the ticket quantity within the transaction
             ticketCategory.quantity += ticket.quantity;
             await transactionalEntityManager.save(
               this.ticketCategoryRepository.target,

@@ -8,7 +8,11 @@ import {
   UserRole,
   UserTokens,
 } from '../database/entities/user';
-import { Order, OrderTicket } from '../database/entities/order';
+import {
+  OrderTicket,
+  Order,
+  OrderTicketCategory,
+} from '../database/entities/order';
 import { Ticket, TicketCategory } from '../database/entities/ticket';
 import {
   Artist,
@@ -50,5 +54,6 @@ export default (): PostgresConnectionOptions => ({
     Genre,
     Role,
     Venue,
+    OrderTicketCategory,
   ],
 });

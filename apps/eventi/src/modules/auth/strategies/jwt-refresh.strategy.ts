@@ -37,6 +37,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
       refreshToken,
       device_info,
     );
+
     if (!user) {
       throw new UnauthorizedException('Invalid refresh token');
     }

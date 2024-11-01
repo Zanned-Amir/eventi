@@ -90,6 +90,15 @@ export class TicketController {
       message: 'Ticket deleted successfully',
     };
   }
+  @Post('convert-to-qr/:id')
+  async convertTicketToQRCode(@Param('id', ParseIntPipe) id: number) {
+    const qrCode = await this.ticketService.convertTicketToQRCode(id);
+
+    return {
+      status: 'success',
+      data: qrCode,
+    };
+  }
 
   // Ticket category endpoints
 

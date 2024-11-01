@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { Transport } from '@nestjs/microservices';
-import { PAYMENT_GATEWAY_QUEUE } from '@app/common/constants/service';
+import { PAYMENT_ORDER_QUEUE } from '@app/common/constants/service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,9 +12,10 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: ['amqp://amiroso:amiroso@localhost:5672'],
-      queue: PAYMENT_GATEWAY_QUEUE,
+      queue: PAYMENT_ORDER_QUEUE,
     },
   });
+
   app.useGlobalPipes(new ValidationPipe());
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT');

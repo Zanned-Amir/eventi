@@ -8,8 +8,8 @@ import { PaymentGatewayController } from './payment-gateway.controller';
 import { PaymentGatewayService } from './payment-gateway.service';
 import { ConfigModule } from '@nestjs/config';
 import {
-  PAYMENT_GATEWAY_QUEUE,
   PAYMENT_GATEWAY_SERVICE,
+  PAYMENT_ORDER_QUEUE,
 } from '@app/common/constants/service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { DatabaseModule } from './database/database.module';
@@ -31,7 +31,7 @@ import { RawBodyMiddleware } from '@app/common/middleware/raw-body.middleware';
         transport: Transport.RMQ,
         options: {
           urls: ['amqp://amiroso:amiroso@localhost:5672'],
-          queue: PAYMENT_GATEWAY_QUEUE,
+          queue: PAYMENT_ORDER_QUEUE,
         },
       },
     ]),

@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { ROLES_METADATA_KEY } from '../decorators/role.decorator';
 import { Role } from '../../database/entities/user/userRole.entity';
+import { PERMISSIONS_METADATA_KEY } from '../decorators/permission.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -22,6 +23,14 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
     if (isPublic) {
+      return true;
+    }
+
+    const permissions = this.reflector.getAllAndOverride<
+      Permissions[] | undefined
+    >(PERMISSIONS_METADATA_KEY, [context.getHandler(), context.getClass()]);
+
+    if (permissions && permissions.length > 0) {
       return true;
     }
 
