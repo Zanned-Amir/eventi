@@ -13,9 +13,16 @@ import {
   NOTIFICATION_SERVICE,
 } from '@app/common/constants/service';
 import { ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConcertRole } from '../../database/entities/concert';
 
 @Module({
-  imports: [UsersModule, PassportModule, JwtModule],
+  imports: [
+    UsersModule,
+    PassportModule,
+    JwtModule,
+    TypeOrmModule.forFeature([ConcertRole]),
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,

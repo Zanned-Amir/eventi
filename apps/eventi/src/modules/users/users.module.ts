@@ -12,6 +12,8 @@ import {
   externalProvider,
   Permission,
 } from '../../database/entities/user/index';
+import { OrdersModule } from '../orders/orders.module';
+import { TicketModule } from '../ticket/ticket.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import {
       externalProvider,
       Permission,
     ]),
+    OrdersModule,
+    TicketModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],

@@ -5,6 +5,8 @@ import {
   Order,
   OrderTicket,
   OrderTicketCategory,
+  Register,
+  RegistrationRule,
 } from '../../database/entities/order';
 import { OrdersService } from './orders.service';
 import { Ticket, TicketCategory } from '../../database/entities/ticket';
@@ -16,6 +18,8 @@ import {
   ORDERS_SERVICE,
 } from '@app/common/constants/service';
 import { ConfigService } from '@nestjs/config';
+import { RegisterController } from './register.controller';
+import { Payment } from '../../database/entities/payment/payment.entity';
 
 @Module({
   imports: [
@@ -25,6 +29,9 @@ import { ConfigService } from '@nestjs/config';
       TicketCategory,
       Ticket,
       OrderTicketCategory,
+      Register,
+      RegistrationRule,
+      Payment,
     ]),
   ],
 
@@ -62,6 +69,7 @@ import { ConfigService } from '@nestjs/config';
       inject: [ConfigService],
     },
   ],
-  controllers: [OrdersController],
+  controllers: [OrdersController, RegisterController],
+  exports: [OrdersService],
 })
 export class OrdersModule {}

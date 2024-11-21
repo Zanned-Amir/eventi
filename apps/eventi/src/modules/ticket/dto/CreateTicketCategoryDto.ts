@@ -34,4 +34,8 @@ export class CreateTicketCategoryDto {
   @IsOptional()
   @IsInt()
   quantity?: number;
+
+  @IsOptional()
+  @IsInt()
+  default_quantity?: number;
 }

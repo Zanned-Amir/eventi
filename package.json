@@ -39,7 +39,11 @@
     "cookie-parser": "^1.4.7",
     "ejs": "^3.1.10",
     "generate-password": "^1.7.1",
+    "morgan": "^1.10.0",
+    "nest-router": "^1.0.9",
+    "nest-winston": "^1.9.7",
     "nodemailer": "^6.9.16",
+    "otp-generator": "^4.0.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -50,7 +54,8 @@
     "rxjs": "^7.8.1",
     "stripe": "^17.2.1",
     "typeorm-extension": "^3.6.1",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

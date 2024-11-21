@@ -54,6 +54,12 @@ export class TicketCategory {
   })
   quantity: number;
 
+  @Column({
+    type: 'int',
+    nullable: true,
+  })
+  default_quantity: number;
+
   @VersionColumn()
   version: number;
 

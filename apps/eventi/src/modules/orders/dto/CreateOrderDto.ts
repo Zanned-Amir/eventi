@@ -1,4 +1,11 @@
-import { IsArray, ValidateNested, Min, IsInt, IsString } from 'class-validator';
+import {
+  IsArray,
+  ValidateNested,
+  Min,
+  IsInt,
+  IsString,
+  IsEmail,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateOrderDto {
@@ -9,6 +16,7 @@ export class CreateOrderDto {
   @IsString()
   delivery_address: string;
   @IsString()
+  @IsEmail()
   delivery_email_address: string;
 }
 

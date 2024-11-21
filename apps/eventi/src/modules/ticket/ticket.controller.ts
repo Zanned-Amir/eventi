@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto } from './dto/CreateTicketDto';
@@ -15,15 +16,19 @@ import { UpdateTicketDto } from './dto/UpdateTicketDto';
 import { CreateTicketCategoryDto } from './dto/CreateTicketCategoryDto';
 import { UpdateTicketCategoryDto } from './dto/UpdateTicketCategoryDto';
 import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
+import { FindTicketsDto } from './dto/FindTicketsDto';
+import { FindTicketsCategoriesDto } from './dto/FindTicketsCategoriesDto';
 
-@Controller('ticket')
+@Controller('tickets')
+@Roles(Role.ADMIN, Role.SUPPORT_STAFF)
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
-  @Public()
   @Get()
-  async getTickets() {
-    const tickets = await this.ticketService.getTickets();
+  async getTickets(@Query() query: FindTicketsDto) {
+    const tickets = await this.ticketService.getTickets(query);
     return {
       status: 'success',
       count: tickets.length,
@@ -31,10 +36,10 @@ export class TicketController {
     };
   }
 
-  @Public()
   @Get('category')
-  async getTicketCategories() {
-    const ticketCategories = await this.ticketService.getTicketCategories();
+  async getTicketCategories(@Query() query: FindTicketsCategoriesDto) {
+    const ticketCategories =
+      await this.ticketService.getTicketCategories(query);
     return {
       status: 'success',
       count: ticketCategories.length,
@@ -154,6 +159,27 @@ export class TicketController {
     return {
       status: 'success',
       message: 'Ticket category deleted successfully',
+    };
+  }
+  @Public()
+  @Post('validate/:ticket_id/ticket-code')
+  async scanTicket(
+    @Param('ticket_id') ticketId: number,
+    @Body('ticket_code_h') hashedTicketCode: string,
+  ) {
+    const ticket = await this.ticketService.scanTicket(
+      ticketId,
+      hashedTicketCode,
+    );
+    if (ticket === true) {
+      return {
+        status: 'success',
+        message: 'Ticket scanned successfully',
+      };
+    }
+    return {
+      status: 'error',
+      message: ticket,
     };
   }
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -13,6 +13,9 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
+import { AdminModule, ApiModule } from '../router/api-routing.module';
+import { WinstonLoggerModule } from './utils/winston.logger.module';
+import { LoggingMiddleware } from './common/middleware/logging.middleware';
 
 @Module({
   imports: [
@@ -21,6 +24,8 @@ import { RolesGuard } from './common/guards/roles.guard';
       load: [databaseConfig],
       envFilePath: 'apps/eventi/.env',
     }),
+    WinstonLoggerModule,
+
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -28,6 +33,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     TicketModule,
     ConcertModule,
     NotificationModule,
+    ApiModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
@@ -42,4 +49,9 @@ import { RolesGuard } from './common/guards/roles.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply the logging middleware to all routes
+    consumer.apply(LoggingMiddleware).forRoutes('*');
+  }
+}

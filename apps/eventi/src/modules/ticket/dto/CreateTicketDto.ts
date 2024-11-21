@@ -9,5 +9,5 @@ export class CreateTicketDto {
 
   @IsOptional()
   @IsBoolean()
-  is_used: boolean;
+  is_used?: boolean;
 }

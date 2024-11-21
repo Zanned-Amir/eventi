@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
@@ -18,11 +17,21 @@ import {
   UpdateUserAccountDto,
 } from './dto';
 
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { OrdersService } from '../orders/orders.service';
+import { TicketService } from '../ticket/ticket.service';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
+import { FindUsersDto } from './dto/FindUsersDto';
 
 @Controller('users')
+@Roles(Role.ADMIN)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly ordersService: OrdersService,
+    private readonly ticketService: TicketService,
+  ) {}
 
   @Get('test')
   async test() {
@@ -32,8 +41,7 @@ export class UsersController {
   //users
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  async getUsers(@Query() query) {
+  async getUsers(@Query() query: FindUsersDto) {
     const users = await this.usersService.getUsers(query);
     return {
       status: 'success',
@@ -43,6 +51,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getUser(@Param('id', ParseIntPipe) id: number) {
     const user = await this.usersService.getUser(id);
     return {
@@ -52,9 +61,10 @@ export class UsersController {
   }
 
   @Post()
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async createUser(
-    @Body('userAccount') userAccountDto: CreateUserAccountDto,
-    @Body('userLoginData') userLoginDataDto: CreateUserLoginDataDto,
+    @Body() userAccountDto: CreateUserAccountDto,
+    @Body() userLoginDataDto: CreateUserLoginDataDto,
   ) {
     const user = await this.usersService.createUser(
       userAccountDto,
@@ -88,9 +98,11 @@ export class UsersController {
   }
 
   @Get(':id/login-data')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getUserLoginData() {}
 
   @Post(':id/login-data')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async createUserLoginData(
     @Body() createUserLoginDataDto: CreateUserLoginDataDto,
   ) {
@@ -104,6 +116,7 @@ export class UsersController {
   }
 
   @Put(':id/login-data')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async updateUserLoginData(
     @Param('id', ParseIntPipe) id: number,
     @Body() createUserLoginDataDto: CreateUserLoginDataDto,
@@ -120,36 +133,113 @@ export class UsersController {
 
   // user account
 
-  @Patch(':id/profile')
+  @Patch('profile')
+  @Roles(Role.USER)
   async updateUserAccount(
-    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user,
     @Body() updateUserAccountDto: UpdateUserAccountDto,
   ) {
-    const user = await this.usersService.updateUserAccount(
-      id,
+    const user_id = user.user_id;
+    const userUpdate = await this.usersService.updateUserAccount(
+      user_id,
       updateUserAccountDto,
     );
     return {
       status: 'success',
-      data: user,
+      data: userUpdate,
     };
   }
 
-  @Delete(':id/profile')
-  async deleteUserAccount(@Param('id', ParseIntPipe) id: number) {
-    await this.usersService.deleteUserAccount(id);
+  @Delete('profile')
+  @Roles(Role.USER)
+  async deactivateCurrentUserAccount(
+    @CurrentUser() user,
+    @Body('password') password: string,
+  ) {
+    const user_id = user.user_id;
+    await this.usersService.currentUserDeactivate(user_id, password);
     return {
       status: 'success',
       data: 'account deleted successfully',
     };
   }
 
-  @Get(':id/profile')
-  async getUserAccount(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersService.getUserAccount(id);
+  @Get('profile')
+  @Roles(Role.USER)
+  async getUserAccount(@CurrentUser() user) {
+    const user_id = user.user_id;
+    const userAccount = await this.usersService.getUserAccount(user_id);
     return {
       status: 'success',
-      data: user,
+      data: userAccount,
+    };
+  }
+
+  @Get('profile/orders')
+  @Roles(Role.USER)
+  async getUserOrders(@CurrentUser() user, @Query() query) {
+    const user_id = user.user_id;
+    const orders = await this.ordersService.getOrderForCurrentUserWithAggregate(
+      query,
+      user_id,
+    );
+    return {
+      status: 'success',
+      count: orders.length,
+      data: orders,
+    };
+  }
+
+  @Get('profile/orders/:order_id/tickets')
+  @Roles(Role.USER)
+  async getUserOrderTickets(
+    @CurrentUser() user,
+    @Param('order_id', ParseIntPipe) order_id: number,
+  ) {
+    const user_id = user.user_id;
+    const tickets = await this.ordersService.getTicketsByUserIdAndOrderId(
+      user_id,
+      order_id,
+    );
+    return {
+      status: 'success',
+      count: tickets.length,
+      data: tickets,
+    };
+  }
+
+  @Get('profile/orders/:order_id/tickets/:ticket_id')
+  @Roles(Role.USER)
+  async getUserOrderTicket(
+    @CurrentUser() user,
+    @Param('order_id', ParseIntPipe) order_id: number,
+    @Param('ticket_id', ParseIntPipe) ticket_id: number,
+  ) {
+    const user_id = user.user_id;
+    const ticket =
+      await this.ordersService.getTicketByUserIdAndOrderIdAndTicketId(
+        user_id,
+        order_id,
+        ticket_id,
+      );
+    return {
+      status: 'success',
+      data: ticket,
+    };
+  }
+
+  @Get('profile/tickets')
+  @Roles(Role.USER)
+  async getUserTickets(@CurrentUser() user, @Query() query) {
+    const user_id = user.user_id;
+    const tickets =
+      await this.ticketService.getTicketForCurrentUserWithAggregate(
+        query,
+        user_id,
+      );
+    return {
+      status: 'success',
+      data: tickets,
     };
   }
 }

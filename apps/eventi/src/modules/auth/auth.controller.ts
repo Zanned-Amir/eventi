@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -27,6 +29,8 @@ import { Public } from '../../common/decorators/public.decorator';
 import { UsersService } from '../users/users.service';
 import { UpdateRoleDto } from '../concert/dto';
 import { EmailConfirmationDto } from './dto/EmailConfirmationDto';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -44,6 +48,7 @@ export class AuthController {
   }
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
   async login(
     @CurrentUser() user: LoginRequestDto,
@@ -53,7 +58,11 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout() {}
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(@CurrentUser() user, @Res({ passthrough: true }) res: Response) {
+    const user_id = user.user_id;
+    return await this.authService.logout(user_id, res);
+  }
 
   @Public()
   @Post('refresh-token')
@@ -79,15 +88,19 @@ export class AuthController {
     return user;
   }
 
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Get('permissions')
   async getPermissions() {
     return await this.usersService.getPermissions();
   }
+
+  @Roles(Role.ADMIN)
   @Post('permissions')
   async createPermissions(@Body() createPermission: CreatePermissionDto) {
     return await this.usersService.createPermission(createPermission);
   }
 
+  @Roles(Role.ADMIN)
   @Patch('permissions/:id')
   async updatePermissions(
     @Param('id', ParseIntPipe) id: number,
@@ -96,11 +109,13 @@ export class AuthController {
     return await this.usersService.updatePermission(id, updatePermissionDto);
   }
 
+  @Roles(Role.ADMIN)
   @Delete('permissions/:id')
   async deletePermissions(@Param('id', ParseIntPipe) id: number) {
     return await this.usersService.deletePermission(id);
   }
 
+  @Roles(Role.ADMIN)
   @Post('permissions/:permission_id/users/:id')
   async assignPermissionToUser(
     @Param('id', ParseIntPipe) id: number,
@@ -109,16 +124,19 @@ export class AuthController {
     return await this.usersService.assignPermissionToUser(id, permission_id);
   }
 
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Get('roles')
   async getRoles() {
     return await this.usersService.getAppRoles();
   }
 
+  @Roles(Role.ADMIN)
   @Post('roles')
   async createRoles(@Body() CreateUserRoleDto: CreateUserRoleDto) {
     return await this.usersService.createAppRole(CreateUserRoleDto);
   }
 
+  @Roles(Role.ADMIN)
   @Patch('roles/:id')
   async updateRoles(
     @Param('id', ParseIntPipe) id: number,
@@ -127,17 +145,20 @@ export class AuthController {
     return await this.usersService.updateAppRole(id, updateRoleDto);
   }
 
+  @Roles(Role.ADMIN)
   @Delete('roles/:id')
   async deleteRoles(@Param('id', ParseIntPipe) id: number) {
     return await this.usersService.deleteAppRole(id);
   }
 
+  // send it to the user's email
   @Public()
   @Post('email-confirmation-send/:email')
   async emailConfirmation(@Param('email') email: string) {
     return await this.authService.confirmEmail(email);
   }
 
+  // send it to the user's email and the user will click on the link this url
   @Public()
   @Post('confirm-email/:email/:confirmation_token')
   async confirmEmail(
@@ -150,6 +171,7 @@ export class AuthController {
     );
   }
 
+  // send it to the user's email
   @Public()
   @Post('password-reset')
   async passwordReset(@Body() EmailConfirmationDto: EmailConfirmationDto) {
@@ -157,6 +179,7 @@ export class AuthController {
     return await this.authService.resetPassword(email);
   }
 
+  // send it to the user's email and the user will click on the link this url
   @Public()
   @Post('password-change/:email/:recovery_token')
   async passwordChange(
@@ -170,10 +193,18 @@ export class AuthController {
       email,
     });
   }
-
   @Public()
-  @Post('test-email')
-  async testEmail() {
-    return await this.authService.test();
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF, Role.TICKET_VERIFIER)
+  @Get('check/concert/:concert_id/concert-role/:concert_role_id')
+  async checkConcertMember(
+    @Param('concert_id', ParseIntPipe) concert_id: number,
+    @Param('concert_role_id', ParseIntPipe) concert_role_id: number,
+    @Body('access_code') access_code: string,
+  ) {
+    return await this.authService.checkConcertRole(
+      concert_role_id,
+      concert_id,
+      access_code,
+    );
   }
 }

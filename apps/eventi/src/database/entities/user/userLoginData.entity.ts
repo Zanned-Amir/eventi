@@ -25,7 +25,7 @@ export class UserLoginData {
   @Column({
     type: 'text',
     nullable: false,
-    select: false,
+    select: true,
   })
   password: string;
 
@@ -68,7 +68,7 @@ export class UserLoginData {
 
   @Column({
     type: 'enum',
-    enum: ['ACTIVE', 'INACTIVE', 'BLOCKED', 'DELETED'],
+    enum: ['ACTIVE', 'INACTIVE', 'BLOCKED', 'DEACTIVATED'],
     default: 'ACTIVE',
   })
   account_status: string;
@@ -135,15 +135,12 @@ export class UserLoginData {
   isConfirmationTokenExpired(): boolean {
     if (!this.token_generation_timestamp) return true;
 
-    // Convert timestamps to UTC for consistent comparison
     const tokenGenerationDate = new Date(this.token_generation_timestamp);
     const currentDate = new Date();
 
-    // Expiration set to 10 minutes from the confirmation token timestamp
     const tokenExpirationDate = new Date(tokenGenerationDate);
     tokenExpirationDate.setMinutes(tokenGenerationDate.getMinutes() + 10);
 
-    // Log to help identify issues
     console.log('Current Date (UTC):', currentDate.toISOString());
     console.log(
       'Token Generation Date (UTC):',

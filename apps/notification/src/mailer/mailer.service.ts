@@ -100,11 +100,35 @@ export class MailerService {
     });
   }
 
-  async sendOrderCreatedEmail(data: any) {
-    console.log('Order Created Email', data);
+  async sendInvoiceEmail(data: any) {
+    await this.sendMail('invoice.ejs', data.email, 'Invoice', {
+      logoURL: '', // URL to the logo
+      customerName: data.customerName, // Customer's name
+      orderNumber: data.orderNumber, // Order number
+      orderDate: data.orderDate, // Order date
+      items: data.items, // Array of item objects
+      subtotal: data.subtotal, // Subtotal amount
+      grandTotal: data.grandTotal, // Grand total amount
+      tax: data.tax, // Tax amount
+      paymentMethod: data.paymentMethod, // Payment method object
+    });
   }
 
-  async sendOrderShippedEmail(data: any) {
-    console.log('Order Shipped Email', data);
+  async sendTicketEmail(data: any) {
+    await this.sendMail('ticket.ejs', data.email, 'Ticket', {
+      tickets: data.tickets, // Array of ticket objects
+      poweredBy: data.poweredBy, // Powered by text
+    });
+  }
+
+  async sendRoleBadgetEmail(data: any) {
+    await this.sendMail('roleBadge.ejs', data.email, 'Role Badge', {
+      full_name: data.full_name,
+      role_name: data.role_name,
+      concert_name: data.concert_name,
+      concert_start_date: data.concert_start_date,
+      concert_end_date: data.concert_end_date,
+      access_code_qr: data.access_code_qr,
+    });
   }
 }

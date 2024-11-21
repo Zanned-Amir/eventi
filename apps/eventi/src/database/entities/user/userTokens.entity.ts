@@ -45,9 +45,9 @@ export class UserTokens {
   is_in_blacklist: boolean;
 
   @Column({
-    type: 'bigint',
+    type: 'timestamp',
   })
-  expires_at: number;
+  expires_at: Date;
 
   @CreateDateColumn()
   created_at: Date;

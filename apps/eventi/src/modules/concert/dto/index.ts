@@ -1,17 +1,17 @@
-import { CreateConcertDto } from './CreateConcertDto';
-import { CreateConcertGroupDto } from './CreateConcertGroupDto';
-import { CreateConcertMemberDto } from './CreateConcertMemberDto';
-import { CreateConcertRoleDto } from './CreateConcertRoleDto';
-import { CreateGenreDto } from './CreateGenreDto';
-import { CreateRoleDto } from './CreateRoleDto';
-import { CreateVenueDto } from './CreateVenueDto';
-import { UpdateConcertDto } from './UpdateConcertDto';
-import { UpdateConcertGroupDto } from './UpdateConcertGroupDto';
-import { UpdateConcertMemberDto } from './UpdateConcertMemberDto';
-import { UpdateConcertRoleDto } from './UpdateConcertRoleDto';
-import { UpdateGenreDto } from './UpdateGenreDto';
-import { UpdateRoleDto } from './UpdateRoleDto';
-import { UpdateVenueDto } from './UpdateVenueDto';
+import { CreateConcertDto } from './Create/CreateConcertDto';
+import { CreateConcertGroupDto } from './Create/CreateConcertGroupDto';
+import { CreateConcertMemberDto } from './Create/CreateConcertMemberDto';
+import { CreateConcertRoleDto } from './Create/CreateConcertRoleDto';
+import { CreateGenreDto } from './Create/CreateGenreDto';
+import { CreateRoleDto } from './Create/CreateRoleDto';
+import { CreateVenueDto } from './Create/CreateVenueDto';
+import { UpdateConcertDto } from './Update/UpdateConcertDto';
+import { UpdateConcertGroupDto } from './Update/UpdateConcertGroupDto';
+import { UpdateConcertMemberDto } from './Update/UpdateConcertMemberDto';
+import { UpdateConcertRoleDto } from './Update/UpdateConcertRoleDto';
+import { UpdateGenreDto } from './Update/UpdateGenreDto';
+import { UpdateRoleDto } from './Update/UpdateRoleDto';
+import { UpdateVenueDto } from './Update/UpdateVenueDto';
 
 export {
   CreateGenreDto,

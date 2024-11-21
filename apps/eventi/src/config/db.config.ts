@@ -12,6 +12,8 @@ import {
   OrderTicket,
   Order,
   OrderTicketCategory,
+  Register,
+  RegistrationRule,
 } from '../database/entities/order';
 import { Ticket, TicketCategory } from '../database/entities/ticket';
 import {
@@ -24,6 +26,7 @@ import {
   Role,
   Venue,
 } from '../database/entities/concert';
+import { Payment } from '../database/entities/payment/payment.entity';
 
 export default (): PostgresConnectionOptions => ({
   type: 'postgres',
@@ -55,5 +58,8 @@ export default (): PostgresConnectionOptions => ({
     Role,
     Venue,
     OrderTicketCategory,
+    Register,
+    RegistrationRule,
+    Payment,
   ],
 });

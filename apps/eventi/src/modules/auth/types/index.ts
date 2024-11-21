@@ -3,6 +3,6 @@ export class UserToken {
   token: string;
   type: string;
   is_in_blacklist: boolean = false;
-  expires_at: number;
+  expires_at: Date;
   device_info: string;
 }

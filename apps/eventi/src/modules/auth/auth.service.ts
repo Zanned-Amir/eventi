@@ -18,6 +18,9 @@ import { v4 as uuid } from 'uuid';
 import { NOTIFICATION_SERVICE } from '@app/common/constants/service';
 import { ClientProxy } from '@nestjs/microservices';
 import { ChangePasswordWithTokenDto } from './dto/ChangePasswordWithTokenDto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ConcertRole } from '../../database/entities/concert';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +30,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(NOTIFICATION_SERVICE)
     private readonly notificationClient: ClientProxy,
+    @InjectRepository(ConcertRole)
+    private readonly concertRoleRepository: Repository<ConcertRole>,
   ) {}
 
   async register(
@@ -70,13 +75,10 @@ export class AuthService {
     const expiresAccessToken = new Date(Date.now() + accessTokenExpiry);
     const expiresRefreshToken = new Date(Date.now() + refreshTokenExpiry);
 
-    const refreshTokenExpiresAt =
-      Math.floor(Date.now() / 1000) + refreshTokenExpiry / 1000;
-
     const userRefreshToken: UserToken = {
       user_id: user.user_id,
       token: await hash(refreshToken, 10),
-      expires_at: refreshTokenExpiresAt,
+      expires_at: expiresRefreshToken,
       type: 'REFRESH',
       device_info: deviceInfo,
       is_in_blacklist: false,
@@ -98,7 +100,26 @@ export class AuthService {
       expires: expiresRefreshToken,
     });
   }
-  async logout() {}
+
+  async logout(userId: number, res: Response) {
+    // Invalidate all user tokens for the specified user
+    await this.usersService.invalidateUserTokens(userId);
+
+    // Clear the authentication and refresh cookies
+    res.clearCookie('Authentication', {
+      httpOnly: true,
+      secure: this.configService.getOrThrow('NODE_ENV') === 'production',
+    });
+
+    res.clearCookie('Refresh', {
+      httpOnly: true,
+      secure: this.configService.getOrThrow('NODE_ENV') === 'production',
+    });
+
+    return {
+      message: 'Logged out successfully',
+    };
+  }
 
   async verifyUser(email: string, password: string) {
     try {
@@ -171,7 +192,7 @@ export class AuthService {
     const userRefreshToken: UserToken = {
       user_id: user.user_id,
       token: await hash(refreshToken, 10),
-      expires_at: refreshTokenExpiry,
+      expires_at: expiresRefreshToken,
       type: 'REFRESH',
       device_info: deviceInfo,
       is_in_blacklist: false,
@@ -211,7 +232,7 @@ export class AuthService {
 
       const authenticated = await compare(refreshToken, user.token);
       if (!authenticated) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('Refresh token is not valid');
       }
       return user;
     } catch (err) {
@@ -323,9 +344,34 @@ export class AuthService {
     return { message };
   }
 
-  async test() {
-    this.notificationClient.emit('order_test', {
-      message: 'Test email',
-    });
+  async checkConcertRole(
+    concert_role_id: number,
+    concert_id: number,
+    access_code: string,
+  ) {
+    const concertRole = await this.concertRoleRepository
+      .createQueryBuilder('concert_role')
+      .leftJoinAndSelect('concert_role.concertMember', 'concertMember')
+      .leftJoinAndSelect('concert_role.role', 'role')
+      .leftJoinAndSelect('concert_role.concert', 'concert')
+      .where('concert_role.concert_role_id = :concert_role_id', {
+        concert_role_id,
+      })
+      .andWhere('concert_role.concert_id = :concert_id', { concert_id })
+      .getOne();
+
+    if (!concertRole) {
+      throw new UnauthorizedException('Concert role not found');
+    }
+
+    if (concertRole.access_code !== access_code) {
+      throw new UnauthorizedException('Access code is invalid');
+    }
+
+    if (concertRole.concert.concert_end_date < new Date()) {
+      throw new UnauthorizedException('Concert has ended');
+    }
+
+    return concertRole;
   }
 }

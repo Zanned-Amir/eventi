@@ -1,14 +1,14 @@
+import { BaseFindDto } from 'apps/eventi/src/common/dto/BaseFindDto';
 import { Transform } from 'class-transformer';
 import {
   IsOptional,
   IsString,
   IsEnum,
   IsBoolean,
-  Min,
-  IsInt,
+  IsDate,
 } from 'class-validator';
 
-export class FindUsersDto {
+export class FindUsersDto extends BaseFindDto {
   @IsOptional()
   @IsString()
   first_name?: string;
@@ -38,47 +38,34 @@ export class FindUsersDto {
   is_confirmed?: boolean;
 
   @IsOptional()
-  @IsEnum(['ACTIVE', 'INACTIVE', 'BLOCKED', 'DELETED'])
+  @IsEnum(['ACTIVE', 'INACTIVE', 'BLOCKED', 'DELETED'], {
+    message:
+      'Account status must be either ACTIVE, INACTIVE, BLOCKED or DELETED',
+  })
   account_status?: string;
 
   @IsOptional()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   birth_date?: Date;
 
   @IsOptional()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   birth_date_gte?: Date;
 
   @IsOptional()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   birth_date_lte?: Date;
 
   @IsOptional()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   birth_date_gt?: Date;
 
   @IsOptional()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   birth_date_lt?: Date;
-
-  @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
-  @Min(0)
-  offset: number = 0; // Default to 0
-
-  @IsOptional()
-  @IsInt()
-  @Transform(({ value }) => parseInt(value, 10))
-  @Min(1)
-  limit: number = 10; // Default to 10
-
-  @IsOptional()
-  @IsEnum(['ASC', 'DESC'], {
-    each: true,
-    message: 'Order must be either ASC or DESC',
-  })
-  orderBy?: { [key: string]: 'ASC' | 'DESC' };
-
-  rawQuery: boolean = false;
 }

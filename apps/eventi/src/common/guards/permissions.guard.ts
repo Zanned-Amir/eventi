@@ -16,6 +16,15 @@ export class PermissionGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
+    const isLocked = this.reflector.getAllAndOverride<boolean>('isLocked', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isLocked) {
+      throw new HttpException('ressource is unavailable', HttpStatus.FORBIDDEN);
+    }
+
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
       context.getHandler(),
       context.getClass(),
@@ -47,5 +56,14 @@ export class PermissionGuard implements CanActivate {
       );
     }
     return true;
+  }
+
+  handleRequest(err, user) {
+    if (err || !user) {
+      throw new HttpException(
+        'Unauthorized permission',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
   }
 }

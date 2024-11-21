@@ -38,6 +38,14 @@ export class StripeService {
     createCheckoutSessionDto: CreateCheckoutSessionDto,
   ): Promise<{ url: string }> {
     try {
+      const tax_rate = await this.stripe.taxRates.create({
+        display_name: 'VAT',
+        percentage: createCheckoutSessionDto.tax,
+        inclusive: false,
+      });
+
+      console.log('createCheckoutSessionDto', createCheckoutSessionDto);
+
       const line_items = createCheckoutSessionDto.products.map((product) => ({
         price_data: {
           currency: createCheckoutSessionDto.currency,
@@ -47,6 +55,7 @@ export class StripeService {
           unit_amount: product.price * 100,
         },
         quantity: product.quantity,
+        tax_rates: [tax_rate.id ? tax_rate.id : ''],
       }));
 
       const productsMetaData = createCheckoutSessionDto.products.map(
@@ -54,6 +63,8 @@ export class StripeService {
           product_id: product.product_id,
           concert_id: product.concert_id,
           quantity: product.quantity,
+          price: product.price,
+          product_name: product.product_name,
         }),
       );
 
@@ -64,9 +75,12 @@ export class StripeService {
         success_url: createCheckoutSessionDto.success_url,
         cancel_url: createCheckoutSessionDto.cancel_url,
         metadata: {
+          customerName: 'test',
           user_id: createCheckoutSessionDto.user_id,
+          register_id: createCheckoutSessionDto.register_id,
           order_id: createCheckoutSessionDto.order_id,
           products: JSON.stringify(productsMetaData),
+          tax_percentage: tax_rate.percentage.toString(),
         },
         expires_at: Math.floor(Date.now() / 1000) + 60 * 30,
       });
@@ -103,8 +117,9 @@ export class StripeService {
 
           // Process successful payment
           const newPayment: Partial<Payment> = {
-            order_id: Number(session.metadata.order_id),
-            user_id: Number(session.metadata.user_id),
+            order_id: Number(session.metadata.order_id) || null,
+            user_id: Number(session.metadata.user_id) || null,
+            register_id: Number(session.metadata.register_id) || null,
             payment_intent: session.payment_intent.toString(),
             amount: session.amount_total / 100,
             payment_date: new Date(),
@@ -113,12 +128,15 @@ export class StripeService {
             status: 'paid',
           };
 
+          console.log('newPayment', newPayment);
+
           const payment = this.paymentRepository.create(newPayment);
           await this.paymentRepository.save(payment);
 
           this.paymentClient.emit('payment-billed', {
             order_id: newPayment.order_id,
             user_id: newPayment.user_id,
+            register_id: newPayment.register_id,
             payment_id: payment.payment_id,
             session_object: newPayment.session_object,
             state: PaymentWebhookStat.SUCCEEDED,
@@ -135,6 +153,7 @@ export class StripeService {
           this.paymentClient.emit('payment-failed', {
             order_id: Number(paymentFailed.metadata.order_id),
             user_id: Number(paymentFailed.metadata.user_id),
+            register_id: Number(paymentFailed.metadata.register_id),
             session_object: paymentFailed,
             reason: 'Payment failed due to insufficient funds or other issues',
             state: PaymentWebhookStat.FAILED,
@@ -150,6 +169,7 @@ export class StripeService {
           this.paymentClient.emit('payment-failed', {
             order_id: Number(paymentCanceled.metadata.order_id),
             user_id: Number(paymentCanceled.metadata.user_id),
+            register_id: Number(paymentCanceled.metadata.register_id),
             session_object: paymentCanceled,
             reason: 'Payment was canceled by the user',
             state: PaymentWebhookStat.CANCELED,

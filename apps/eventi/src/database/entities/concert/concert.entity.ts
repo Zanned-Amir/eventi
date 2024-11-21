@@ -16,6 +16,8 @@ import { OneToMany } from 'typeorm';
 import { ConcertRole } from './concertRole.entity';
 import { Ticket } from '../ticket/ticket.entity';
 import { TicketCategory } from '../ticket/ticketCategory.entity';
+import { Register } from '../order';
+import { RegistrationRule } from './RegistrationRule.entity';
 
 @Entity()
 export class Concert {
@@ -34,6 +36,12 @@ export class Concert {
     type: 'timestamp',
     nullable: true,
   })
+  concert_available_from: Date;
+
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
   concert_start_date: Date;
 
   @Column({
@@ -44,6 +52,12 @@ export class Concert {
 
   @Column()
   concert_name: string;
+
+  @Column({
+    type: 'boolean',
+    default: true,
+  })
+  is_active: boolean;
 
   @ManyToMany(() => Artist, (artist) => artist.concerts, {
     cascade: true,
@@ -77,6 +91,15 @@ export class Concert {
 
   @OneToMany(() => TicketCategory, (ticketCategory) => ticketCategory.concert)
   ticketCategories: TicketCategory[];
+
+  @OneToMany(() => Register, (register) => register.concert)
+  registers: Register[];
+
+  @OneToMany(
+    () => RegistrationRule,
+    (registrationRule) => registrationRule.concert,
+  )
+  registrationRules: RegistrationRule[];
 
   @BeforeInsert()
   @BeforeUpdate()

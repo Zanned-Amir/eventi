@@ -1,10 +1,22 @@
-import { Column, Entity, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  JoinColumn,
+  PrimaryColumn,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { Concert } from './concert.entity';
 import { Role } from './role.entity';
 import { ConcertMember } from './concertMember.entity';
 
 @Entity()
+@Unique('UQ_CONCERT_ROLE', ['concert_member_id', 'concert_id', 'role_id'])
 export class ConcertRole {
+  @PrimaryGeneratedColumn()
+  concert_role_id: number;
+
   @PrimaryColumn()
   concert_member_id: number;
 

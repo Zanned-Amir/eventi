@@ -250,6 +250,29 @@ export class MainSeeder implements Seeder {
           ['VIEW_EVENTS'].includes(p.permission_name),
         ),
       },
+      {
+        role_name: 'VENDOR',
+        role_description: 'Manages vendor booths and sales',
+        permissions: savedPermissions.filter((p) =>
+          ['MANAGE_VENDOR_BOOTHS', 'VIEW_VENDOR_SALES_REPORTS'].includes(
+            p.permission_name,
+          ),
+        ),
+      },
+      {
+        role_name: 'TICKET_VENDOR',
+        role_description: 'Manages ticket sales and inventory',
+        permissions: savedPermissions.filter((p) =>
+          ['MANAGE_TICKETS', 'VIEW_REPORTS'].includes(p.permission_name),
+        ),
+      },
+      {
+        role_name: 'TICKET_VERIFIER',
+        role_description: 'Validates tickets at the event entrance',
+        permissions: savedPermissions.filter((p) =>
+          ['VIEW_EVENT_RESERVATIONS'].includes(p.permission_name),
+        ),
+      },
     ];
 
     // Save Roles

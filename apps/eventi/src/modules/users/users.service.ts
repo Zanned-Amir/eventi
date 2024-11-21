@@ -46,7 +46,8 @@ export class UsersService {
   async getUsers(query: FindUsersDto): Promise<UserAccount[]> {
     const queryBuilder = this.userAccountRepository
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.userLoginData', 'loginData');
+      .leftJoinAndSelect('user.userLoginData', 'loginData')
+      .leftJoinAndSelect('user.role', 'role');
 
     // Apply filters
     if (query.first_name) {
@@ -62,17 +63,15 @@ export class UsersService {
     }
 
     if (query.gender) {
-      queryBuilder.andWhere('LOWER(user.gender) = LOWER(:gender)', {
+      queryBuilder.andWhere('user.gender = :gender', {
         gender: query.gender,
       });
     }
 
     if (query.role_name) {
-      queryBuilder
-        .innerJoinAndSelect('user.role', 'role')
-        .andWhere('LOWER(role.role_name) = LOWER(:role_name)', {
-          role_name: query.role_name,
-        });
+      queryBuilder.andWhere('role.role_name = :role_name', {
+        role_name: query.role_name,
+      });
     }
 
     if (query.email) {
@@ -95,7 +94,7 @@ export class UsersService {
 
     if (query.account_status) {
       queryBuilder.andWhere(
-        'LOWER(loginData.account_status) = LOWER(:account_status)',
+        'loginData.account_status = UPPER(:account_status)',
         {
           account_status: query.account_status,
         },
@@ -161,7 +160,7 @@ export class UsersService {
       });
 
       if (!userRole) {
-        throw new NotFoundException('User role not found');
+        throw new NotFoundException('User role not found contact webSupport');
       }
 
       createUserAccountDto.role_id = userRole.role_id;
@@ -375,6 +374,46 @@ export class UsersService {
     return this.userLoginDataRepository.findOne({
       where: { user_id: id },
     });
+  }
+
+  async deactivateUserAccount(id: number) {
+    const result = await this.userLoginDataRepository.update(id, {
+      account_status: 'DEACTIVATED',
+    });
+
+    if (result.affected > 0) return true;
+
+    return false;
+  }
+
+  async activateUserAccount(id: number) {
+    const result = await this.userLoginDataRepository.update(id, {
+      account_status: 'ACTIVE',
+    });
+
+    if (result.affected > 0) return true;
+
+    return false;
+  }
+
+  async blockUserAccount(id: number) {
+    const result = await this.userLoginDataRepository.update(id, {
+      account_status: 'BLOCKED',
+    });
+
+    if (result.affected > 0) return true;
+
+    return false;
+  }
+
+  async unblockUserAccount(id: number) {
+    const result = await this.userLoginDataRepository.update(id, {
+      account_status: 'ACTIVE',
+    });
+
+    if (result.affected > 0) return true;
+
+    return false;
   }
 
   async updateUserPassword(id: number, password: string) {
@@ -769,5 +808,28 @@ export class UsersService {
       return true;
     }
     return false;
+  }
+
+  async currentUserDeactivate(user_id: number, password: string) {
+    const user = await this.userLoginDataRepository.findOne({
+      where: { user_id },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${user_id} not found`);
+    }
+    if (await compare(password, user.password)) {
+      const result = await this.userLoginDataRepository.update(user_id, {
+        account_status: 'DEACTIVATED',
+      });
+      if (result.affected > 0) return true;
+    }
+    return false;
+  }
+
+  async invalidateUserTokens(userId: number) {
+    await this.userTokensRepository.update(
+      { user_id: userId, is_in_blacklist: false },
+      { is_in_blacklist: true },
+    );
   }
 }

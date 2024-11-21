@@ -17,4 +17,11 @@ export class CreateConcertDto {
   @IsOptional()
   @IsDateString()
   concert_end_date?: string;
+
+  @IsOptional()
+  @IsDateString()
+  concert_available_from?: string;
+
+  @IsOptional()
+  is_active?: boolean;
 }

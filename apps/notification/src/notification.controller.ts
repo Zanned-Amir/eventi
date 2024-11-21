@@ -37,18 +37,24 @@ export class NotificationController {
     return this.mailerService.sendEmailConfirmed(data);
   }
 
-  @EventPattern('order_created_email')
-  async handleOrderCreatedEmail(data: any) {
-    return this.mailerService.sendOrderCreatedEmail(data);
-  }
-
-  @EventPattern('order_shipped_email')
-  async handleOrderShippedEmail(data: any) {
-    return this.mailerService.sendOrderShippedEmail(data);
-  }
-
   @EventPattern('order_test')
   async handleTestEmail(data: any) {
     console.log('Test Email', data);
+  }
+
+  @EventPattern('order_invoice_email')
+  async handleOrderInvoiceEmail(data: any) {
+    return this.mailerService.sendInvoiceEmail(data);
+  }
+
+  @EventPattern('order_ticket_email')
+  async handleOrderTicketEmail(data: any) {
+    console.log('Ticket Email', data);
+    return this.mailerService.sendTicketEmail(data);
+  }
+
+  @EventPattern('send_role_badge_email')
+  async handleRoleBadgeEmail(data: any) {
+    return this.mailerService.sendRoleBadgetEmail(data);
   }
 }

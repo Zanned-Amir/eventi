@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Order Confirmation</title>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
+  <style>
+    body {
+      margin: 0; 
+      padding: 0; 
+      background: #f6f6f6; 
+      font-family: 'Open Sans', sans-serif; 
+      color: #333;
+    }
+    .container {
+      width: 100%; 
+      max-width: 600px; 
+      margin: auto; 
+      background: #ffffff; 
+      border-radius: 10px; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .header, .footer {
+      background: #4CAF50; 
+      color: white; 
+      text-align: center; 
+      padding: 20px; 
+      border-radius: 10px 10px 0 0;
+    }
+    .footer {
+      border-radius: 0 0 10px 10px;
+    }
+    .content {
+      padding: 30px;
+    }
+    .order-info {
+      display: flex; 
+      justify-content: space-between; 
+      margin-bottom: 20px;
+    }
+    .invoice {
+      font-size: 21px; 
+      color: #ff0000; 
+      text-align: right;
+    }
+    table {
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-bottom: 20px;
+    }
+    th, td {
+      padding: 10px; 
+      text-align: left; 
+      border-bottom: 1px solid #e1e1e1;
+    }
+    th {
+      background: #f2f2f2; 
+      font-weight: 700;
+    }
+    .total-row {
+      font-weight: bold;
+    }
+    .footer-message {
+      font-size: 12px; 
+      color: #5b5b5b;
+    }
+    @media only screen and (max-width: 600px) {
+      .container {
+        width: 96% !important;
+      }
+      .content {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <img src="<%= logoURL %>" width="120" height="50" alt="Company Logo" />
+      <h1>Order Confirmation</h1>
+    </div>
+    <div class="content">
+      <div class="order-info">
+        <div>
+          <p>Hello, <%= customerName %>.</p>
+          <p>Thank you for shopping with us.</p>
+        </div>
+        <div class="invoice">
+          Invoice<br>
+          ORDER #<%= orderNumber %><br>
+          <%= orderDate %>
+        </div>
+      </div>
+      
+      <!-- Order Details -->
+      <table>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Subtotal</th>
+        </tr>
+        <% items.forEach(item => { %>
+        <tr>
+          <td><%= item.name %></td>
+          <td align="center"><%= item.quantity %></td>
+          <td align="right">$<%= item.subtotal %></td>
+        </tr>
+        <% }) %>
+      </table>
+
+      <!-- Total -->
+      <table>
+        <tr>
+          <td>Subtotal</td>
+          <td align="right">$<%= subtotal %></td>
+        </tr>
+        <tr class="total-row">
+          <td><strong>Grand Total (Incl. Tax)</strong></td>
+          <td align="right"><strong>$<%= grandTotal %></strong></td>
+        </tr>
+        <tr>
+          <td><small>TAX</small></td>
+          <td align="right"><small>%<%= tax %></small></td>
+        </tr>
+      </table>
+
+      <!-- Payment Information -->
+      <table>
+        <tr>
+          <td>
+            <strong>PAYMENT METHOD</strong><br>
+            <%= paymentMethod.type %><br>
+            Transaction ID: <%= paymentMethod.transactionId %><br>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-message">Have a nice day.</p>
+    </div>
+  </div>
+</body>
+</html>

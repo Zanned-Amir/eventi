@@ -1,8 +1,8 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsDate,
   IsEnum,
-  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -22,8 +22,8 @@ export class CreateUserTokenDto {
   @IsOptional()
   is_in_blacklist: boolean = false;
 
-  @IsNumber()
-  expires_at: number;
+  @IsDate()
+  expires_at: Date;
 
   @IsString()
   device_info: string;
