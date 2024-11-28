@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -15,7 +15,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AdminModule, ApiModule } from '../router/api-routing.module';
 import { WinstonLoggerModule } from './utils/winston.logger.module';
-import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './config/logger.config';
 
 @Module({
   imports: [
@@ -25,7 +26,10 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
       envFilePath: 'apps/eventi/.env',
     }),
     WinstonLoggerModule,
-
+    WinstonModule.forRoot({
+      ...winstonConfig,
+      handleExceptions: true, // Additional exception handling
+    }),
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -49,9 +53,4 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
     },
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    // Apply the logging middleware to all routes
-    consumer.apply(LoggingMiddleware).forRoutes('*');
-  }
-}
+export class AppModule {}

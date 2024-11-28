@@ -131,4 +131,10 @@ export class MailerService {
       access_code_qr: data.access_code_qr,
     });
   }
+
+  async sendOtpEmail(data: any) {
+    await this.sendMail('otp.ejs', data.email, 'OTP', {
+      otp: data.otp,
+    });
+  }
 }

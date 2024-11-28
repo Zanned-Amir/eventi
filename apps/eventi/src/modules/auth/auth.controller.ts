@@ -31,6 +31,8 @@ import { UpdateRoleDto } from '../concert/dto';
 import { EmailConfirmationDto } from './dto/EmailConfirmationDto';
 import { Roles } from '../../common/decorators/role.decorator';
 import { Role } from '../../database/entities/user/userRole.entity';
+import { LoginM2FADto } from './dto/LoginM2FADto';
+import { UserAgent } from '../../common/decorators/User-agent.decoratos';
 
 @Controller('auth')
 export class AuthController {
@@ -55,6 +57,18 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return await this.authService.login(user, res);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('login-m2fa')
+  async loginM2FA(
+    @Body() user: LoginM2FADto,
+    @UserAgent() userAgent: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    user.userAgent = userAgent;
+    return await this.authService.loginM2fa(user, res);
   }
 
   @Post('logout')
@@ -91,13 +105,22 @@ export class AuthController {
   @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Get('permissions')
   async getPermissions() {
-    return await this.usersService.getPermissions();
+    const data = await this.usersService.getPermissions();
+
+    return {
+      status: 'success',
+      data,
+    };
   }
 
   @Roles(Role.ADMIN)
   @Post('permissions')
   async createPermissions(@Body() createPermission: CreatePermissionDto) {
-    return await this.usersService.createPermission(createPermission);
+    const data = await this.usersService.createPermission(createPermission);
+    return {
+      status: 'success',
+      data,
+    };
   }
 
   @Roles(Role.ADMIN)
@@ -106,13 +129,27 @@ export class AuthController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updatePermissionDto: UpdatePermissionDto,
   ) {
-    return await this.usersService.updatePermission(id, updatePermissionDto);
+    const data = await this.usersService.updatePermission(
+      id,
+      updatePermissionDto,
+    );
+    return {
+      status: 'success',
+      data,
+    };
   }
 
   @Roles(Role.ADMIN)
   @Delete('permissions/:id')
   async deletePermissions(@Param('id', ParseIntPipe) id: number) {
-    return await this.usersService.deletePermission(id);
+    const result = await this.usersService.deletePermission(id);
+
+    if (result) {
+      return {
+        status: 'success',
+        data: 'Permission deleted successfully',
+      };
+    }
   }
 
   @Roles(Role.ADMIN)
@@ -121,19 +158,46 @@ export class AuthController {
     @Param('id', ParseIntPipe) id: number,
     @Param('permission_id', ParseIntPipe) permission_id: number,
   ) {
-    return await this.usersService.assignPermissionToUser(id, permission_id);
+    const data = this.usersService.assignPermissionToUser(id, permission_id);
+    return {
+      status: 'success',
+      data,
+    };
   }
 
   @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Get('roles')
   async getRoles() {
-    return await this.usersService.getAppRoles();
+    const data = await this.usersService.getAppRoles();
+    return {
+      status: 'success',
+      data,
+    };
+  }
+
+  // assign role to user
+
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
+  @Post('roles/:role_id/users/:id')
+  async assignRoleToUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('role_id', ParseIntPipe) role_id: number,
+  ) {
+    const data = this.usersService.assignRoleToUser(id, role_id);
+    return {
+      status: 'success',
+      data,
+    };
   }
 
   @Roles(Role.ADMIN)
   @Post('roles')
   async createRoles(@Body() CreateUserRoleDto: CreateUserRoleDto) {
-    return await this.usersService.createAppRole(CreateUserRoleDto);
+    const data = await this.usersService.createAppRole(CreateUserRoleDto);
+    return {
+      status: 'success',
+      data,
+    };
   }
 
   @Roles(Role.ADMIN)
@@ -142,13 +206,25 @@ export class AuthController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateRoleDto: UpdateRoleDto,
   ) {
-    return await this.usersService.updateAppRole(id, updateRoleDto);
+    const data = await this.usersService.updateAppRole(id, updateRoleDto);
+
+    return {
+      status: 'success',
+      data,
+    };
   }
 
   @Roles(Role.ADMIN)
   @Delete('roles/:id')
   async deleteRoles(@Param('id', ParseIntPipe) id: number) {
-    return await this.usersService.deleteAppRole(id);
+    const result = await this.usersService.deleteAppRole(id);
+
+    if (result) {
+      return {
+        status: 'success',
+        data: 'Role deleted successfully',
+      };
+    }
   }
 
   // send it to the user's email
@@ -200,11 +276,18 @@ export class AuthController {
     @Param('concert_id', ParseIntPipe) concert_id: number,
     @Param('concert_role_id', ParseIntPipe) concert_role_id: number,
     @Body('access_code') access_code: string,
+    @Body('signature') signature: string,
   ) {
-    return await this.authService.checkConcertRole(
+    const data = await this.authService.checkConcertRole(
       concert_role_id,
       concert_id,
       access_code,
+      signature,
     );
+
+    return {
+      status: 'success',
+      data,
+    };
   }
 }

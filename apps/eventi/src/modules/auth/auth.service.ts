@@ -21,6 +21,9 @@ import { ChangePasswordWithTokenDto } from './dto/ChangePasswordWithTokenDto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConcertRole } from '../../database/entities/concert';
 import { Repository } from 'typeorm';
+import { createVerify } from 'crypto';
+import { LoginM2FADto } from './dto/LoginM2FADto';
+import { authenticator, totp } from 'otplib';
 
 @Injectable()
 export class AuthService {
@@ -50,6 +53,29 @@ export class AuthService {
       user_id: user.user_id,
     };
 
+    if (user.enabled_m2fa === true) {
+      const mfa_token = this.jwtService.sign(tokenPayload, {
+        secret: this.configService.getOrThrow<string>('JWT_MFA_SECRET'),
+        expiresIn: '10m',
+      });
+
+      const secret = authenticator.generateSecret();
+      const otp = totp.generate(secret);
+
+      await this.usersService.updateLoginData(user.user_id, {
+        m2fa_token: mfa_token,
+        m2fa_secret_otp: secret,
+        m2fa_secret_otp_timestamp: new Date(),
+      });
+
+      this.notificationClient.emit('mfa_otp_email', {
+        email: user.email,
+        otp,
+      });
+
+      return { message: 'otp sent to your email', mfa_token };
+    }
+
     const accessTokenExpiry = parseInt(
       this.configService.getOrThrow<string>(
         'JWT_ACCESS_TOKEN_SECRET_EXPIRES_IN_MS',
@@ -77,6 +103,86 @@ export class AuthService {
 
     const userRefreshToken: UserToken = {
       user_id: user.user_id,
+      token: await hash(refreshToken, 10),
+      expires_at: expiresRefreshToken,
+      type: 'REFRESH',
+      device_info: deviceInfo,
+      is_in_blacklist: false,
+    };
+
+    await this.usersService.createUserToken(userRefreshToken);
+
+    res.clearCookie('jwt');
+
+    res.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: this.configService.getOrThrow('NODE_ENV') === 'production',
+      expires: expiresAccessToken,
+    });
+
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: this.configService.getOrThrow('NODE_ENV') === 'production',
+      expires: expiresRefreshToken,
+    });
+  }
+
+  async loginM2fa(user: LoginM2FADto, res: Response) {
+    const { mfa_token, otp } = user;
+
+    const isValidToken = this.jwtService.verify(mfa_token, {
+      secret: this.configService.getOrThrow<string>('JWT_MFA_SECRET'),
+    });
+    if (!isValidToken) {
+      throw new UnauthorizedException('Mfa_Token is invalid or expired');
+    }
+
+    const foundedUser =
+      await this.usersService.getUserLoginDataByUserM2faToken(mfa_token);
+
+    if (!foundedUser) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isValidOtp = totp.check(otp, foundedUser.m2fa_secret_otp);
+
+    if (!isValidOtp) {
+      throw new UnauthorizedException('OTP is invalid or expired');
+    }
+
+    const deviceInfo = user.userAgent;
+    const tokenPayload: TokenPayload = {
+      user_id: foundedUser.user_id,
+    };
+
+    const accessTokenExpiry = parseInt(
+      this.configService.getOrThrow<string>(
+        'JWT_ACCESS_TOKEN_SECRET_EXPIRES_IN_MS',
+      ),
+      10,
+    );
+    const refreshTokenExpiry = parseInt(
+      this.configService.getOrThrow<string>(
+        'JWT_REFRESH_TOKEN_SECRET_EXPIRES_IN_MS',
+      ),
+      10,
+    );
+
+    const accessToken = this.jwtService.sign(tokenPayload, {
+      secret: this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_SECRET'),
+      expiresIn: accessTokenExpiry / 1000,
+    });
+
+    const refreshToken = this.jwtService.sign(tokenPayload, {
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN_SECRET'),
+      expiresIn: refreshTokenExpiry / 1000,
+    });
+
+    const expiresAccessToken = new Date(Date.now() + accessTokenExpiry);
+    const expiresRefreshToken = new Date(Date.now() + refreshTokenExpiry);
+
+    const userRefreshToken: UserToken = {
+      user_id: foundedUser.user_id,
       token: await hash(refreshToken, 10),
       expires_at: expiresRefreshToken,
       type: 'REFRESH',
@@ -348,6 +454,7 @@ export class AuthService {
     concert_role_id: number,
     concert_id: number,
     access_code: string,
+    signature: string,
   ) {
     const concertRole = await this.concertRoleRepository
       .createQueryBuilder('concert_role')
@@ -360,17 +467,36 @@ export class AuthService {
       .andWhere('concert_role.concert_id = :concert_id', { concert_id })
       .getOne();
 
+    // Validate the signature
+    const publicKey = this.configService.getOrThrow<string>(
+      'PUBLIC_KEY_SIGNATURE',
+    );
+
+    const payload = `${concert_role_id}:${access_code}`;
+    const verifier = createVerify('SHA256');
+    verifier.update(payload);
+    verifier.end();
+    const isValidSignature = verifier.verify(publicKey, signature, 'base64');
+
+    if (!isValidSignature) {
+      throw new UnauthorizedException('Signature is invalid');
+    }
+
     if (!concertRole) {
       throw new UnauthorizedException('Concert role not found');
     }
 
+    // Validate the access code
     if (concertRole.access_code !== access_code) {
       throw new UnauthorizedException('Access code is invalid');
     }
 
+    // Ensure the concert is still ongoing
     if (concertRole.concert.concert_end_date < new Date()) {
       throw new UnauthorizedException('Concert has ended');
     }
+
+    // Any additional custom checks can go here
 
     return concertRole;
   }

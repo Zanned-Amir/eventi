@@ -232,6 +232,9 @@ export class UsersService {
         'userLoginData.username',
         'userLoginData.is_confirmed',
         'userLoginData.account_status',
+        'userLoginData.created_at',
+        'userLoginData.updated_at',
+        'userLoginData.enabled_m2fa',
         'permissions',
       ])
       .getOne();
@@ -248,6 +251,10 @@ export class UsersService {
       username: user.userLoginData?.username,
       is_confirmed: user.userLoginData?.is_confirmed,
       account_status: user.userLoginData?.account_status,
+      created_at: user.userLoginData?.created_at,
+      updated_at: user.userLoginData?.updated_at,
+      enabled_m2fa: user.userLoginData?.enabled_m2fa,
+
       role: {
         role_name: user.role?.role_name,
         role_id: user.role?.role_id,
@@ -265,11 +272,37 @@ export class UsersService {
     const userAccount = this.userAccountRepository.create(createUserAccountDto);
     return this.userAccountRepository.save(userAccount);
   }
-
+  // remove field from userAccount
   async getUserAccount(id: number) {
-    return this.userAccountRepository.findOne({
+    const user = await this.userAccountRepository.findOne({
       where: { user_id: id },
+      relations: ['role', 'userLoginData'],
     });
+
+    return {
+      user_id: user.user_id,
+      role_id: user.role_id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      gender: user.gender,
+      birth_date: user.birth_date,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      role: {
+        role_id: user.role.role_id,
+        role_name: user.role.role_name,
+        role_description: user.role.role_description,
+      },
+      userLoginData: {
+        user_id: user.userLoginData.user_id,
+        username: user.userLoginData.username,
+        email: user.userLoginData.email,
+        is_confirmed: user.userLoginData.is_confirmed,
+        account_status: user.userLoginData.account_status,
+        created_at: user.userLoginData.created_at,
+        updated_at: user.userLoginData.updated_at,
+      },
+    };
   }
 
   async updateUserAccount(
@@ -317,6 +350,9 @@ export class UsersService {
         'userLoginData.account_status',
         'userAccount.role_id',
         'role.role_name',
+        'userLoginData.created_at',
+        'userLoginData.updated_at',
+        'userLoginData.enabled_m2fa',
         'permissions',
       ])
       .getOne();
@@ -328,6 +364,9 @@ export class UsersService {
         password: userLoginData.password,
         is_confirmed: userLoginData.is_confirmed,
         account_status: userLoginData.account_status,
+        created_at: userLoginData.created_at,
+        updated_at: userLoginData.updated_at,
+        enabled_m2fa: userLoginData.enabled_m2fa,
         role: {
           role_id: userLoginData.userAccount?.role_id,
           role_name: userLoginData.userAccount?.role?.role_name,
@@ -831,5 +870,80 @@ export class UsersService {
       { user_id: userId, is_in_blacklist: false },
       { is_in_blacklist: true },
     );
+  }
+
+  async assignRoleToUser(user_id: number, role_id: number) {
+    const user = await this.userAccountRepository.findOne({
+      where: { user_id },
+    });
+
+    if (!user) {
+      throw new HttpException(
+        `User with ID ${user_id} not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const role = await this.userRoleRepository.findOne({
+      where: { role_id },
+    });
+
+    if (!role) {
+      throw new HttpException(
+        `Role with ID ${role_id} not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    user.role = role;
+
+    return this.userAccountRepository.save(user);
+  }
+
+  async enableM2FA(user_id: number) {
+    const user = await this.userLoginDataRepository.findOne({
+      where: { user_id },
+    });
+
+    if (!user) {
+      throw new HttpException(
+        `User with ID ${user_id} not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    user.enabled_m2fa = true;
+
+    return this.userLoginDataRepository.save(user);
+  }
+
+  async disableM2FA(user_id: number) {
+    const user = await this.userLoginDataRepository.findOne({
+      where: { user_id },
+    });
+
+    if (!user) {
+      throw new HttpException(
+        `User with ID ${user_id} not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    user.enabled_m2fa = false;
+
+    return this.userLoginDataRepository.save(user);
+  }
+
+  async getUserLoginDataByUserM2faToken(token: string) {
+    return this.userLoginDataRepository.findOne({
+      where: { m2fa_token: token },
+    });
+  }
+
+  async updateLoginData(user_id: number, data: any) {
+    await this.userLoginDataRepository.update(user_id, data);
+    return this.userLoginDataRepository.findOne({
+      where: { user_id },
+    });
   }
 }

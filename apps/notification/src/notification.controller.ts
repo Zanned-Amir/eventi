@@ -57,4 +57,9 @@ export class NotificationController {
   async handleRoleBadgeEmail(data: any) {
     return this.mailerService.sendRoleBadgetEmail(data);
   }
+
+  @EventPattern('mfa_otp_email')
+  async handleMfaOtpEmail(data: any) {
+    return this.mailerService.sendOtpEmail(data);
+  }
 }

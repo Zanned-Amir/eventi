@@ -1,5 +1,10 @@
-import { Optional } from '@nestjs/common';
-import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsStrongPassword,
+} from 'class-validator';
 
 export class LoginRequestDto {
   @IsEmail()
@@ -9,9 +14,13 @@ export class LoginRequestDto {
   @IsString()
   password: string;
 
-  @Optional()
+  @IsOptional()
   user_id?: number;
 
-  @Optional()
+  @IsOptional()
   userAgent: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enabled_m2fa: boolean;
 }

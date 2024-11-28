@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { testMongoDBConnection } from './config/mongodb.connection';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+  private readonly logger = new Logger(AppService.name);
+
+  async onModuleInit() {
+    this.logger.log('Initializing the application...');
+    await testMongoDBConnection();
   }
 }

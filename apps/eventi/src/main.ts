@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
@@ -7,9 +7,16 @@ import { Transport } from '@nestjs/microservices';
 import { PAYMENT_ORDER_QUEUE } from '@app/common/constants/service';
 import * as os from 'os';
 import * as morgan from 'morgan';
+import {
+  WINSTON_MODULE_NEST_PROVIDER,
+  WINSTON_MODULE_PROVIDER,
+} from 'nest-winston';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   // Configure RabbitMQ microservice
   app.connectMicroservice({
@@ -20,8 +27,16 @@ async function bootstrap() {
     },
   });
 
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  const logger = app.get(WINSTON_MODULE_PROVIDER);
+
+  // Global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost, logger));
+
   // Use validation pipes globally
   app.useGlobalPipes(new ValidationPipe());
+
+  app.useGlobalInterceptors(new LoggingInterceptor(logger));
 
   // Use cookie parser middleware
   app.use(cookieParser());
@@ -61,7 +76,8 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   // Log the full address
-  console.log(`Application is running on: http://${ipAddress}:${port}`);
+
+  logger.log('info', `Server running at http://${ipAddress}:${port}`);
 }
 
 bootstrap();

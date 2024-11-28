@@ -11,6 +11,8 @@ import * as QRCode from 'qrcode';
 import { compare, hash } from 'bcrypt';
 import { FindTicketsDto } from './dto/FindTicketsDto';
 import { FindTicketsCategoriesDto } from './dto/FindTicketsCategoriesDto';
+import { createVerify } from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TicketService {
@@ -19,6 +21,7 @@ export class TicketService {
     @InjectRepository(TicketCategory)
     private ticketCategoryRepository: Repository<TicketCategory>,
     private readonly entityManger: EntityManager,
+    private readonly ConfigService: ConfigService,
   ) {}
 
   private readonly MAX_RETRIES = 5;
@@ -466,24 +469,44 @@ export class TicketService {
     return await this.ticketCategoryRepository.delete(ticketCategoryId);
   }
 
-  async scanTicket(ticket_id: number, hashed_ticket_id: string) {
+  async scanTicket(
+    ticket_id: number,
+    hashed_ticket_code: string,
+    signature: string,
+  ) {
     const ticket = await this.ticketRepository.findOne({
       where: {
         ticket_id: ticket_id,
       },
       relations: ['ticketCategory'],
     });
+    const publicKey = this.ConfigService.getOrThrow<string>(
+      'PUBLIC_KEY_SIGNATURE',
+    );
+
+    const qrData = `${ticket.ticket_id}:${ticket.ticket_code}`;
+    const verify = createVerify('SHA256');
+    verify.update(qrData);
+    verify.end(); // Ensure you end the verification process
+    const isValid = verify.verify(publicKey, signature, 'base64');
+
+    if (!isValid) {
+      throw new HttpException(
+        'Invalid QR code signature',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     if (!ticket) {
       throw new HttpException('Ticket not found', HttpStatus.NOT_FOUND);
     }
 
-    const isMatch = await compare(ticket.ticket_code, hashed_ticket_id);
+    const isMatch = await compare(ticket.ticket_code, hashed_ticket_code);
 
     if (!isMatch) {
       throw new HttpException('Invalid ticket code', HttpStatus.BAD_REQUEST);
     }
-
+    /*
     if (ticket.is_used) {
       throw new HttpException('Ticket already scanned', HttpStatus.BAD_REQUEST);
     }
@@ -495,10 +518,10 @@ export class TicketService {
     if (ticket.ticketCategory.end_date < new Date()) {
       throw new HttpException('Ticket has expired', HttpStatus.BAD_REQUEST);
     }
-
+    */
     if (isMatch) {
-      ticket.is_used = true;
-      await this.ticketRepository.save(ticket);
+      //ticket.is_used = true;
+      // await this.ticketRepository.save(ticket);
       return true;
     }
 

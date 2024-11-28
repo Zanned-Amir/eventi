@@ -64,6 +64,30 @@ export class UserLoginData {
     type: 'boolean',
     default: false,
   })
+  enabled_m2fa: boolean;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  m2fa_secret_otp?: string;
+
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
+  m2fa_secret_otp_timestamp?: Date;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  m2fa_token?: string;
+
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
   is_confirmed: boolean;
 
   @Column({

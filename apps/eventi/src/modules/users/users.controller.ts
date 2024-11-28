@@ -25,7 +25,6 @@ import { Role } from '../../database/entities/user/userRole.entity';
 import { FindUsersDto } from './dto/FindUsersDto';
 
 @Controller('users')
-@Roles(Role.ADMIN)
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
@@ -38,103 +37,9 @@ export class UsersController {
     return 'test';
   }
 
-  //users
-
-  @Get()
-  async getUsers(@Query() query: FindUsersDto) {
-    const users = await this.usersService.getUsers(query);
-    return {
-      status: 'success',
-      count: users.length,
-      data: users,
-    };
-  }
-
-  @Get(':id')
-  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
-  async getUser(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersService.getUser(id);
-    return {
-      status: 'success',
-      data: user,
-    };
-  }
-
-  @Post()
-  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
-  async createUser(
-    @Body() userAccountDto: CreateUserAccountDto,
-    @Body() userLoginDataDto: CreateUserLoginDataDto,
-  ) {
-    const user = await this.usersService.createUser(
-      userAccountDto,
-      userLoginDataDto,
-    );
-    return {
-      status: 'success',
-      data: {
-        ...user,
-      },
-    };
-  }
-
-  @Delete(':id')
-  async deleteUser(@Param('id', ParseIntPipe) id: number) {
-    await this.usersService.deleteUserAccount(id);
-    return {
-      status: 'success',
-      data: 'User deleted successfully',
-    };
-  }
-
-  //user login data
-
-  @Delete(':id/login-data')
-  async deleteUserLoginData(@Param('id', ParseIntPipe) id: number) {
-    await this.usersService.deleteUserLoginData(id);
-    return {
-      status: 'success',
-    };
-  }
-
-  @Get(':id/login-data')
-  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
-  async getUserLoginData() {}
-
-  @Post(':id/login-data')
-  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
-  async createUserLoginData(
-    @Body() createUserLoginDataDto: CreateUserLoginDataDto,
-  ) {
-    const userLoginData = await this.usersService.createUserLoginData(
-      createUserLoginDataDto,
-    );
-    return {
-      status: 'success',
-      data: userLoginData,
-    };
-  }
-
-  @Put(':id/login-data')
-  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
-  async updateUserLoginData(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() createUserLoginDataDto: CreateUserLoginDataDto,
-  ) {
-    const userLoginData = await this.usersService.updateUserLoginData(
-      id,
-      createUserLoginDataDto,
-    );
-    return {
-      status: 'success',
-      data: userLoginData,
-    };
-  }
-
   // user account
 
   @Patch('profile')
-  @Roles(Role.USER)
   async updateUserAccount(
     @CurrentUser() user,
     @Body() updateUserAccountDto: UpdateUserAccountDto,
@@ -151,7 +56,6 @@ export class UsersController {
   }
 
   @Delete('profile')
-  @Roles(Role.USER)
   async deactivateCurrentUserAccount(
     @CurrentUser() user,
     @Body('password') password: string,
@@ -165,7 +69,6 @@ export class UsersController {
   }
 
   @Get('profile')
-  @Roles(Role.USER)
   async getUserAccount(@CurrentUser() user) {
     const user_id = user.user_id;
     const userAccount = await this.usersService.getUserAccount(user_id);
@@ -240,6 +143,94 @@ export class UsersController {
     return {
       status: 'success',
       data: tickets,
+    };
+  }
+
+  //users
+
+  @Get()
+  async getUsers(@Query() query: FindUsersDto) {
+    const users = await this.usersService.getUsers(query);
+    return {
+      status: 'success',
+      count: users.length,
+      data: users,
+    };
+  }
+
+  @Get(':id')
+  async getUser(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.usersService.getUser(id);
+    return {
+      status: 'success',
+      data: user,
+    };
+  }
+
+  @Post()
+  async createUser(
+    @Body() userAccountDto: CreateUserAccountDto,
+    @Body() userLoginDataDto: CreateUserLoginDataDto,
+  ) {
+    const user = await this.usersService.createUser(
+      userAccountDto,
+      userLoginDataDto,
+    );
+    return {
+      status: 'success',
+      data: {
+        ...user,
+      },
+    };
+  }
+
+  @Delete(':id')
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+    await this.usersService.deleteUserAccount(id);
+    return {
+      status: 'success',
+      data: 'User deleted successfully',
+    };
+  }
+
+  //user login data
+
+  @Delete(':id/login-data')
+  async deleteUserLoginData(@Param('id', ParseIntPipe) id: number) {
+    await this.usersService.deleteUserLoginData(id);
+    return {
+      status: 'success',
+    };
+  }
+
+  @Get(':id/login-data')
+  async getUserLoginData() {}
+
+  @Post(':id/login-data')
+  async createUserLoginData(
+    @Body() createUserLoginDataDto: CreateUserLoginDataDto,
+  ) {
+    const userLoginData = await this.usersService.createUserLoginData(
+      createUserLoginDataDto,
+    );
+    return {
+      status: 'success',
+      data: userLoginData,
+    };
+  }
+
+  @Put(':id/login-data')
+  async updateUserLoginData(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() createUserLoginDataDto: CreateUserLoginDataDto,
+  ) {
+    const userLoginData = await this.usersService.updateUserLoginData(
+      id,
+      createUserLoginDataDto,
+    );
+    return {
+      status: 'success',
+      data: userLoginData,
     };
   }
 }

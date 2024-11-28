@@ -40,6 +40,8 @@ import { FindRegistrationRuleDto } from './dto/Find/FindRegistrationRuleDto';
 import { AUTH_STAFF_SERVICE } from '@app/common/constants/service';
 import { ClientProxy } from '@nestjs/microservices';
 import * as QRCode from 'qrcode';
+import { createSign } from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ConcertService {
@@ -63,6 +65,8 @@ export class ConcertService {
 
     @InjectRepository(RegistrationRule)
     private registrationRuleRepository: Repository<RegistrationRule>,
+
+    private readonly configService: ConfigService,
 
     @Inject(AUTH_STAFF_SERVICE)
     private readonly authStaffClient: ClientProxy,
@@ -452,6 +456,22 @@ export class ConcertService {
       throw new UnauthorizedException('Concert role not found');
     }
 
+    // Construct the payload
+    const payload = `${concert_id}:${concert_role_id}:${concertRole.access_code}`;
+
+    // Sign the payload using the private key
+    const privateKey = this.configService.getOrThrow<string>(
+      'PRIVATE_KEY_SIGNATURE',
+    );
+    const sign = createSign('SHA256');
+    sign.update(payload);
+    const signature = sign.sign(privateKey, 'base64');
+
+    console.log('Signature:', signature);
+
+    // Include the signature in the QR code data
+    const qrData = `${payload}:${signature}`;
+
     const data = {
       full_name: concertRole.concertMember.full_name,
       role_name: concertRole.role.role_name,
@@ -466,11 +486,10 @@ export class ConcertService {
         .replace(/\..+/, ''),
       concert_member_id: concertRole.concert_member_id,
       email: concertRole.concertMember.email,
-      access_code_qr: await QRCode.toDataURL(
-        `${concert_id}:${concert_role_id}:${concertRole.access_code}`,
-      ),
+      access_code_qr: await QRCode.toDataURL(qrData), // Generate QR code with signed data
     };
 
+    // Emit the email event with the signed data
     this.authStaffClient.emit('send_role_badge_email', data);
   }
 

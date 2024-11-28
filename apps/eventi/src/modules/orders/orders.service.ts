@@ -28,6 +28,8 @@ import { CreateRegisterDto } from './dto/CreateRegisterDto';
 import { FindOrdersDto } from './dto/FIndOrderDto';
 import { Payment } from '../../database/entities/payment/payment.entity';
 import { CreateOrderAdminDto } from './dto/CreateOrderAdminDto';
+import { createSign } from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OrdersService {
@@ -58,6 +60,8 @@ export class OrdersService {
     private registerRepository: Repository<Register>,
 
     private readonly entityManger: EntityManager,
+
+    private readonly configService: ConfigService,
   ) {}
 
   MAX_RETRIES = 5;
@@ -819,6 +823,7 @@ export class OrdersService {
     if (!order) {
       throw new HttpException('Order not found', HttpStatus.BAD_REQUEST);
     }
+
     const TicketsOrder = await this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.orderTickets', 'orderTickets')
@@ -833,7 +838,7 @@ export class OrdersService {
         'order.delivery_address as delivery_address',
         'order.delivery_email_address as delivery_email_address',
         'order.status as status',
-        'order.created_at as  order_date',
+        'order.created_at as order_date',
 
         'ticket.ticket_id as ticket_id',
         'ticket.ticket_code as ticket_code',
@@ -854,31 +859,41 @@ export class OrdersService {
       ])
       .getRawMany();
 
-    // Use Promise.all to resolve all QR code URLs before proceeding
+    const privateKey = this.configService.getOrThrow<string>(
+      'PRIVATE_KEY_SIGNATURE',
+    );
+
     const tickets = await Promise.all(
-      TicketsOrder.map(async (ticket) => ({
-        qrCodeUrl: await QRCode.toDataURL(
-          `${ticket.ticket_id}:${await hash(ticket.ticket_code, 10)}`,
-        ),
-        imageUrl: '',
-        ticketNumber: ticket.ticket_id.toString().padStart(6, '0'),
-        category: ticket.ticket_category_name,
-        eventName: ticket.concert_name,
-        startDate: ticket.start_date
-          .toISOString()
-          .replace('T', ' ')
-          .replace(/\..+/, ''),
-        endDate: ticket.end_date
-          .toISOString()
-          .replace('T', ' ')
-          .replace(/\..+/, ''),
-        location: ticket.location,
-        owner: null,
-        validUntil: ticket.end_date
-          .toISOString()
-          .replace('T', ' ')
-          .replace(/\..+/, ''),
-      })),
+      TicketsOrder.map(async (ticket) => {
+        const payload = `${ticket.ticket_id}:${ticket.ticket_code}`;
+        const sign = createSign('SHA256');
+        sign.update(payload);
+        sign.end(); // Ensure you end the signing process
+        const signature = sign.sign(privateKey, 'base64');
+        console.log('Generated Signature:', signature);
+
+        return {
+          qrCodeUrl: await QRCode.toDataURL(`${payload}:${signature}`),
+          imageUrl: '',
+          ticketNumber: ticket.ticket_id.toString().padStart(6, '0'),
+          category: ticket.ticket_category_name,
+          eventName: ticket.concert_name,
+          startDate: ticket.start_date
+            .toISOString()
+            .replace('T', ' ')
+            .replace(/\..+/, ''),
+          endDate: ticket.end_date
+            .toISOString()
+            .replace('T', ' ')
+            .replace(/\..+/, ''),
+          location: ticket.location,
+          owner: null,
+          validUntil: ticket.end_date
+            .toISOString()
+            .replace('T', ' ')
+            .replace(/\..+/, ''),
+        };
+      }),
     );
 
     this.clientNotificationService.emit('order_ticket_email', {

@@ -9,6 +9,7 @@ import {
   Post,
   NotFoundException,
   Query,
+  HttpCode,
 } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { CreateTicketDto } from './dto/CreateTicketDto';
@@ -161,15 +162,18 @@ export class TicketController {
       message: 'Ticket category deleted successfully',
     };
   }
-  @Public()
+
+  @HttpCode(200)
   @Post('validate/:ticket_id/ticket-code')
   async scanTicket(
     @Param('ticket_id') ticketId: number,
     @Body('ticket_code_h') hashedTicketCode: string,
+    @Body('signature') signature: string,
   ) {
     const ticket = await this.ticketService.scanTicket(
       ticketId,
       hashedTicketCode,
+      signature,
     );
     if (ticket === true) {
       return {

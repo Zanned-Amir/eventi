@@ -3,7 +3,6 @@ import {
   Entity,
   ManyToOne,
   JoinColumn,
-  PrimaryColumn,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -17,7 +16,7 @@ export class ConcertRole {
   @PrimaryGeneratedColumn()
   concert_role_id: number;
 
-  @PrimaryColumn()
+  @Column()
   concert_member_id: number;
 
   @Column({ type: 'uuid' })
