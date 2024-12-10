@@ -1,15 +1,15 @@
 // src/config/mongodb.connection.ts
 import { MongoClient } from 'mongodb';
-import { Logger } from '@nestjs/common';
-
+import { Logger } from 'winston';
 // Function to test MongoDB connection with NestJS Logger
-export async function testMongoDBConnection(uri?: string) {
-  const logger = new Logger('MongoDBConnection'); // Instantiate the NestJS Logger
-  const connectionUri =
-    uri || process.env.MONGODB_URI || 'mongodb://localhost:27017/logs';
+export async function testMongoDBConnection(logger?: Logger) {
+  const connectionUri = process.env.MONGODB_URI;
 
   try {
-    logger.log(`Attempting to connect to MongoDB with URI: ${connectionUri}`);
+    logger.log(
+      'info',
+      `Attempting to connect to MongoDB with URI: ${connectionUri}`,
+    );
 
     const client = new MongoClient(connectionUri, {
       serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
@@ -18,12 +18,16 @@ export async function testMongoDBConnection(uri?: string) {
     });
 
     await client.connect();
-    logger.log('✅ Successfully connected to MongoDB');
+    logger.log('info', '✅ Successfully connected to MongoDB');
 
     await client.close();
     return true;
   } catch (error) {
-    logger.error('❌ MongoDB Connection Failed:', error.message || error);
+    logger.log(
+      'critical',
+      '❌ MongoDB Connection Failed:',
+      error.message || error,
+    );
     return false;
   }
 }
