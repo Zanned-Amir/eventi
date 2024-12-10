@@ -28,7 +28,7 @@ import { CreateRegisterDto } from './dto/CreateRegisterDto';
 import { FindOrdersDto } from './dto/FIndOrderDto';
 import { Payment } from '../../database/entities/payment/payment.entity';
 import { CreateOrderAdminDto } from './dto/CreateOrderAdminDto';
-import { createSign } from 'crypto';
+import { createSign, createVerify } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -174,6 +174,39 @@ export class OrdersService {
     };
   }
 
+  async getOrderByQrCode(
+    order_id: number,
+    payment_id: number,
+    signature: string,
+  ) {
+    const publicKey =
+      this.configService.getOrThrow<string>('INVOICE_PUBLIC_KEY');
+
+    const qrData = `${order_id}:${payment_id}`;
+    const verify = createVerify('SHA256');
+    verify.update(qrData);
+    verify.end();
+    const isValid = verify.verify(publicKey, signature, 'base64');
+
+    if (!isValid) {
+      throw new HttpException(
+        'Invalid QR code signature',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const order = this.orderRepository
+      .createQueryBuilder('order')
+      .where('order.order_id= :order_id', { order_id })
+      .getOne();
+
+    if (!order) {
+      throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
+    }
+
+    return order;
+  }
+
   async getOrderById(order_id: number) {
     return await this.orderRepository.findOne({ where: { order_id } });
   }
@@ -197,7 +230,10 @@ export class OrdersService {
               const ticketCategory = await transactionalEntityManager.findOne(
                 TicketCategory,
                 {
-                  where: { ticket_category_id: ticket.ticket_category_id },
+                  where: {
+                    ticket_category_id: ticket.ticket_category_id,
+                    hide: false,
+                  },
                   relations: ['concert'],
                 },
               );
@@ -518,6 +554,7 @@ export class OrdersService {
     const taxPercent = Number(data.session_object.metadata.tax_percentage);
     const order_id = Number(data.order_id);
     const customerName = data.session_object.customer_name;
+    const payment_id = Number(data.payment_id);
 
     const items = tickets.map((ticket) => ({
       name: ticket.product_name,
@@ -585,7 +622,20 @@ export class OrdersService {
             status: 'completed',
           });
 
+          const privateKey = this.configService.getOrThrow<string>(
+            'INVOICE_PRIVATE_KEY',
+          );
+
+          const payload = `${order_id}:${payment_id}`;
+          const sign = createSign('SHA256');
+          sign.update(payload);
+          sign.end();
+          const signature = sign.sign(privateKey, 'base64');
+
+          const qrCode = await QRCode.toDataURL(`${payload}:${signature}`);
+
           this.clientNotificationService.emit('order_invoice_email', {
+            QRCode: qrCode,
             email: order.delivery_email_address,
             customerName,
             orderNumber: order.order_id,
@@ -868,9 +918,8 @@ export class OrdersService {
         const payload = `${ticket.ticket_id}:${ticket.ticket_code}`;
         const sign = createSign('SHA256');
         sign.update(payload);
-        sign.end(); // Ensure you end the signing process
+        sign.end();
         const signature = sign.sign(privateKey, 'base64');
-        console.log('Generated Signature:', signature);
 
         return {
           qrCodeUrl: await QRCode.toDataURL(`${payload}:${signature}`),

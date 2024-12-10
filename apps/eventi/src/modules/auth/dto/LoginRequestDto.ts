@@ -23,4 +23,6 @@ export class LoginRequestDto {
   @IsOptional()
   @IsBoolean()
   enabled_m2fa: boolean;
+
+  is_confirmed: boolean = false;
 }

@@ -27,6 +27,7 @@ import {
   Venue,
 } from '../database/entities/concert';
 import { Payment } from '../database/entities/payment/payment.entity';
+import { FileAssociation, File } from '../database/entities/file';
 
 export default (): PostgresConnectionOptions => ({
   type: 'postgres',
@@ -35,8 +36,8 @@ export default (): PostgresConnectionOptions => ({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  synchronize: true,
-  logging: true,
+  synchronize: process.env.NODE_ENV === 'development',
+  logging: process.env.NODE_ENV === 'development',
   entities: [
     UserAccount,
     UserLoginData,
@@ -61,5 +62,7 @@ export default (): PostgresConnectionOptions => ({
     Register,
     RegistrationRule,
     Payment,
+    File,
+    FileAssociation,
   ],
 });

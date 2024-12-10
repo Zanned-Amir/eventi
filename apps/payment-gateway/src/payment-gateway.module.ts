@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PaymentGatewayController } from './payment-gateway.controller';
 import { PaymentGatewayService } from './payment-gateway.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
   PAYMENT_GATEWAY_SERVICE,
   PAYMENT_ORDER_QUEUE,
@@ -25,14 +25,24 @@ import { RawBodyMiddleware } from '@app/common/middleware/raw-body.middleware';
       envFilePath: ['apps/payment-gateway/.env'],
     }),
     TypeOrmModule.forFeature([Payment]),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: PAYMENT_GATEWAY_SERVICE,
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://amiroso:amiroso@localhost:5672'],
-          queue: PAYMENT_ORDER_QUEUE,
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [
+              configService.get<string>('NODE_ENV') === 'production'
+                ? configService.get<string>('RMQ_URL_PROD')
+                : configService.get<string>('RMQ_URL_DEV'),
+            ],
+            queue: PAYMENT_ORDER_QUEUE,
+            queueOptions: {
+              durable: true,
+            },
+          },
+        }),
+        inject: [ConfigService],
       },
     ]),
     DatabaseModule,

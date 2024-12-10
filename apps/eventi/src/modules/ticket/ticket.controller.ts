@@ -28,6 +28,7 @@ export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
   @Get()
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getTickets(@Query() query: FindTicketsDto) {
     const tickets = await this.ticketService.getTickets(query);
     return {
@@ -38,6 +39,7 @@ export class TicketController {
   }
 
   @Get('category')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getTicketCategories(@Query() query: FindTicketsCategoriesDto) {
     const ticketCategories =
       await this.ticketService.getTicketCategories(query);
@@ -50,6 +52,7 @@ export class TicketController {
 
   @Public()
   @Get(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getTicket(@Param('id', ParseIntPipe) id: number) {
     const ticket = await this.ticketService.getTicketById(id);
     if (!ticket) {
@@ -62,6 +65,7 @@ export class TicketController {
   }
 
   @Post()
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async createTicket(@Body() createTicketDto: CreateTicketDto) {
     const ticket = await this.ticketService.createTicket(createTicketDto);
     return {
@@ -71,6 +75,7 @@ export class TicketController {
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async updateTicket(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTicketDto: UpdateTicketDto,
@@ -86,6 +91,7 @@ export class TicketController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async deleteTicket(@Param('id', ParseIntPipe) id: number) {
     const deleted = await this.ticketService.deleteTicket(id);
     if (!deleted) {
@@ -97,6 +103,7 @@ export class TicketController {
     };
   }
   @Post('convert-to-qr/:id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async convertTicketToQRCode(@Param('id', ParseIntPipe) id: number) {
     const qrCode = await this.ticketService.convertTicketToQRCode(id);
 
@@ -109,6 +116,7 @@ export class TicketController {
   // Ticket category endpoints
 
   @Post('category')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async createTicketCategory(
     @Body() createTicketCategoryDto: CreateTicketCategoryDto,
   ) {
@@ -122,6 +130,7 @@ export class TicketController {
   }
 
   @Get('category/:id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getTicketCategory(@Param('id', ParseIntPipe) id: number) {
     const ticketCategory = await this.ticketService.getTicketCategoryById(id);
     if (!ticketCategory) {
@@ -134,6 +143,7 @@ export class TicketController {
   }
 
   @Patch('category/:id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async updateTicketCategory(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTicketCategoryDto: UpdateTicketCategoryDto,
@@ -152,6 +162,7 @@ export class TicketController {
   }
 
   @Delete('category/:id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async deleteTicketCategory(@Param('id', ParseIntPipe) id: number) {
     const deleted = await this.ticketService.deleteTicketCategory(id);
     if (!deleted) {
@@ -165,6 +176,7 @@ export class TicketController {
 
   @HttpCode(200)
   @Post('validate/:ticket_id/ticket-code')
+  @Roles(Role.TICKET_VERIFIER, Role.ADMIN, Role.SUPPORT_STAFF)
   async scanTicket(
     @Param('ticket_id') ticketId: number,
     @Body('ticket_code_h') hashedTicketCode: string,

@@ -3,7 +3,9 @@
 /node_modules
 /build
 
+
 **/.env
+/nginx-certs
 
 # Logs
 logs

@@ -7,17 +7,18 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Artist } from './artist.entity';
 import { Venue } from './venue.entity';
 import { ConcertGroup } from './concertGroup.entity';
-import { OneToMany } from 'typeorm';
 import { ConcertRole } from './concertRole.entity';
 import { Ticket } from '../ticket/ticket.entity';
 import { TicketCategory } from '../ticket/ticketCategory.entity';
 import { Register } from '../order';
 import { RegistrationRule } from './RegistrationRule.entity';
+import { FileAssociation } from '../file';
 
 @Entity()
 export class Concert {
@@ -75,6 +76,7 @@ export class Concert {
     },
   })
   artists: Artist[];
+
   @ManyToOne(() => ConcertGroup, (concertGroup) => concertGroup.concerts)
   @JoinColumn({ name: 'concert_group_id' })
   concertGroup: ConcertGroup;
@@ -100,6 +102,13 @@ export class Concert {
     (registrationRule) => registrationRule.concert,
   )
   registrationRules: RegistrationRule[];
+
+  @OneToMany(() => FileAssociation, (fileAssociation) => fileAssociation.file)
+  @JoinColumn({
+    referencedColumnName: 'entity_id',
+    name: 'concert_id',
+  })
+  photos: FileAssociation[];
 
   @BeforeInsert()
   @BeforeUpdate()

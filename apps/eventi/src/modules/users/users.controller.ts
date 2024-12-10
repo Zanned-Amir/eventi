@@ -149,6 +149,7 @@ export class UsersController {
   //users
 
   @Get()
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getUsers(@Query() query: FindUsersDto) {
     const users = await this.usersService.getUsers(query);
     return {
@@ -159,6 +160,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getUser(@Param('id', ParseIntPipe) id: number) {
     const user = await this.usersService.getUser(id);
     return {
@@ -168,6 +170,7 @@ export class UsersController {
   }
 
   @Post()
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async createUser(
     @Body() userAccountDto: CreateUserAccountDto,
     @Body() userLoginDataDto: CreateUserLoginDataDto,
@@ -184,7 +187,27 @@ export class UsersController {
     };
   }
 
+  @Patch(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
+  async updateUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() userAccountDto: UpdateUserAccountDto,
+    @Body() userLoginDataDto: CreateUserLoginDataDto,
+  ) {
+    const user = await this.usersService.updateUser(
+      id,
+      userAccountDto,
+      userLoginDataDto,
+    );
+
+    return {
+      status: 'success',
+      data: user,
+    };
+  }
+
   @Delete(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async deleteUser(@Param('id', ParseIntPipe) id: number) {
     await this.usersService.deleteUserAccount(id);
     return {
@@ -196,6 +219,7 @@ export class UsersController {
   //user login data
 
   @Delete(':id/login-data')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async deleteUserLoginData(@Param('id', ParseIntPipe) id: number) {
     await this.usersService.deleteUserLoginData(id);
     return {
@@ -204,9 +228,11 @@ export class UsersController {
   }
 
   @Get(':id/login-data')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getUserLoginData() {}
 
   @Post(':id/login-data')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async createUserLoginData(
     @Body() createUserLoginDataDto: CreateUserLoginDataDto,
   ) {
@@ -220,6 +246,7 @@ export class UsersController {
   }
 
   @Put(':id/login-data')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async updateUserLoginData(
     @Param('id', ParseIntPipe) id: number,
     @Body() createUserLoginDataDto: CreateUserLoginDataDto,

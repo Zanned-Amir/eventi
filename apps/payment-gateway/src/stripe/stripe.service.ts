@@ -29,9 +29,11 @@ export class StripeService {
     private readonly paymentClient: ClientProxy,
   ) {
     this.stripe = new Stripe(this.apiKey, {
-      apiVersion: '2024-09-30.acacia',
+      apiVersion: '2024-11-20.acacia',
     });
-    this.logger.log('StripeService initialized with API version 2024-09-30');
+    this.logger.log(
+      'StripeService initialized with API version  2024-11-20.acacia',
+    );
   }
 
   async createCheckoutSession(

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -17,7 +17,12 @@ import { AdminModule, ApiModule } from '../router/api-routing.module';
 import { WinstonLoggerModule } from './utils/winston.logger.module';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './config/logger.config';
-
+import { TrackingMiddleware } from './common/middleware/tracking.middleware';
+import { ScheduleModule } from '@nestjs/schedule';
+import { JobModule } from './modules/jobs/job.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { File_UPLOAD_PATH } from './common/constants/variable';
+import { FileModule } from './modules/file/file.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,6 +30,15 @@ import { winstonConfig } from './config/logger.config';
       load: [databaseConfig],
       envFilePath: 'apps/eventi/.env',
     }),
+    ScheduleModule.forRoot(),
+    FileModule,
+    MulterModule.register({
+      dest: File_UPLOAD_PATH,
+      limits: {
+        fileSize: 1024 * 1024 * 5, // 5MB
+      },
+    }),
+    JobModule,
     WinstonLoggerModule,
     WinstonModule.forRoot({
       ...winstonConfig,
@@ -53,4 +67,8 @@ import { winstonConfig } from './config/logger.config';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TrackingMiddleware).forRoutes('*');
+  }
+}

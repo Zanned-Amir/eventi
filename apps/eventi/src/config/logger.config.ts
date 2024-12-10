@@ -1,6 +1,4 @@
 import * as winston from 'winston';
-import * as MongoDB from 'winston-mongodb';
-import * as WinstonElasticsearch from 'winston-elasticsearch';
 import * as DailyRotateFile from 'winston-daily-rotate-file';
 import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 
@@ -29,32 +27,9 @@ const customLogLevels = {
     silly: 'gray',
   },
 };
+winston.addColors(customLogLevels.colors);
 
 // Elasticsearch Transport Configuration
-const elasticsearchTransportOptions: WinstonElasticsearch.ElasticsearchTransportOptions =
-  {
-    level: 'info',
-    clientOpts: {
-      node: process.env.ELASTICSEARCH_URI || 'http://localhost:9200',
-      auth: {
-        username: process.env.ES_USERNAME || '',
-        password: process.env.ES_PASSWORD || '',
-      },
-    },
-    indexPrefix: 'nestjs-application-logs',
-    transformer: (logData) => {
-      const { message, level, metadata, timestamp } =
-        (logData as any).metadata || {}; // Type-cast to include metadata
-      return {
-        '@timestamp': timestamp,
-        severity: level,
-        message,
-        application: process.env.APP_NAME || 'MyApp',
-        server: process.env.SERVER_NAME || 'localhost',
-        ...metadata,
-      };
-    },
-  };
 
 // Create Winston Logger
 export const winstonConfig = {
@@ -67,9 +42,12 @@ export const winstonConfig = {
   transports: [
     // Console Transport
     new winston.transports.Console({
-      level: 'silly', // Enable all levels for console transport
+      level: 'silly',
       format: winston.format.combine(
         winston.format.timestamp(),
+        winston.format.colorize({
+          all: true,
+        }), // Add colors to all levels
         winston.format.ms(),
 
         nestWinstonModuleUtilities.format.nestLike(
@@ -91,7 +69,12 @@ export const winstonConfig = {
       datePattern: 'YYYY-MM-DD',
       zippedArchive: true,
       maxSize: '20m',
-      maxFiles: '14d',
+      maxFiles: '1d',
+      format: winston.format.combine(
+        winston.format((info) => {
+          return info.level === 'error' ? info : false; // Only include 'error' level logs
+        })(),
+      ),
     }),
 
     // Daily Rotate File Transport for User Logs
@@ -101,41 +84,53 @@ export const winstonConfig = {
       datePattern: 'YYYY-MM-DD',
       zippedArchive: true,
       maxSize: '20m',
-      maxFiles: '14d',
+      maxFiles: '1d',
+      format: winston.format.combine(
+        winston.format((info) => {
+          return info.level === 'critical' ? info : false; // Only include 'critical' level logs
+        })(),
+      ),
     }),
-
-    // MongoDB Transport for Error Logs
-    new MongoDB.MongoDB({
-      db: process.env.MONGODB_URI || 'mongodb://localhost:27017/logs',
-      level: 'error', // Only log error-level logs in MongoDB
-      collection: 'error-logs',
-      metaKey: 'metadata',
-      storeHost: true, // Log the hostname
-    }),
-
-    // MongoDB Transport for Critical Logs
-    new MongoDB.MongoDB({
-      db: process.env.MONGODB_URI || 'mongodb://localhost:27017/logs',
-      level: 'critical', // Only log critical-level logs in MongoDB
-      collection: 'critical-logs',
-      metaKey: 'metadata',
-      storeHost: true, // Log the hostname
-    }),
-
+    /*
     new MongoDB.MongoDB({
       db: process.env.MONGODB_URI || 'mongodb://localhost:27017/logs',
       level: 'user',
       collection: 'user-logs',
       metaKey: 'metadata',
       storeHost: true,
+      format: winston.format.combine(
+        winston.format((info) => {
+          return info.level === 'user' ? info : false;
+        })(),
+      ),
     }),
 
+    new MongoDB.MongoDB({
+      db: process.env.MONGODB_URI || 'mongodb://localhost:27017/logs',
+      level: 'critical',
+      collection: 'critical-logs',
+      metaKey: 'metadata',
+      storeHost: true,
+      format: winston.format.combine(
+        winston.format((info) => {
+          return info.level === 'critical' ? info : false; // Only include 'critical' level logs
+        })(),
+      ),
+    }),
+
+    new MongoDB.MongoDB({
+      db: process.env.MONGODB_URI || 'mongodb://localhost:27017/logs',
+      level: 'error',
+      collection: 'error-logs',
+      metaKey: 'metadata',
+      storeHost: true,
+      format: winston.format.combine(
+        winston.format((info) => {
+          return info.level === 'error' ? info : false; // Only include 'error' level logs
+        })(),
+      ),
+    }),
+*/
     // Elasticsearch Transport
-    new WinstonElasticsearch.ElasticsearchTransport(
-      elasticsearchTransportOptions,
-    ),
   ],
 };
-
-// Add custom colors for log levels
-winston.addColors(customLogLevels.colors);

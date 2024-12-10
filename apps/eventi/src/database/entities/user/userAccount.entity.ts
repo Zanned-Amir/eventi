@@ -19,6 +19,7 @@ import { UserLoginDataExternal } from './userLoginDataExternal.entity';
 import { UserTokens } from './userTokens.entity';
 import { Permission } from './permission.entity';
 import { Order } from '../order';
+import { FileAssociation } from '../file';
 
 @Entity()
 export class UserAccount {
@@ -54,6 +55,9 @@ export class UserAccount {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ nullable: true })
+  photo_id?: number;
 
   @ManyToOne(() => UserRole, (userRole) => userRole.users, {})
   @JoinColumn({
@@ -95,6 +99,10 @@ export class UserAccount {
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  @ManyToOne(() => FileAssociation, (FileAssociation) => FileAssociation.file)
+  @JoinColumn({ name: 'photo_id', referencedColumnName: 'file_id' })
+  photo?: FileAssociation;
 
   @BeforeInsert()
   @BeforeUpdate()

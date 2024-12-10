@@ -8,17 +8,29 @@ import { promises as fs } from 'fs';
 @Injectable()
 export class MailerService {
   private readonly logger = new Logger(MailerService.name);
-
-  constructor(private readonly configService: ConfigService) {}
+  private isProduction: boolean;
+  constructor(private readonly configService: ConfigService) {
+    this.isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
+  }
 
   private mailTransporter() {
     return nodemailer.createTransport({
-      host: this.configService.getOrThrow<string>('MAIL_HOST'),
-      port: this.configService.getOrThrow<number>('MAIL_PORT'),
-      secure: false,
+      host: this.isProduction
+        ? this.configService.getOrThrow<string>('MAIL_HOST_PROD')
+        : this.configService.getOrThrow<string>('MAIL_HOST'),
+      port: this.isProduction
+        ? this.configService.getOrThrow<number>('MAIL_PORT_PROD')
+        : this.configService.getOrThrow<number>('MAIL_PORT'),
+      secure: this.configService.getOrThrow<string>('MAIL_PORT') === '465',
+      // Use TLS in production
       auth: {
-        user: this.configService.getOrThrow<string>('MAIL_USER'),
-        pass: this.configService.getOrThrow<string>('MAIL_PASSWORD'),
+        user: this.isProduction
+          ? this.configService.getOrThrow<string>('MAIL_USER_PROD')
+          : this.configService.getOrThrow<string>('MAIL_USER'),
+        pass: this.isProduction
+          ? this.configService.getOrThrow<string>('MAIL_PASSWORD_PROD')
+          : this.configService.getOrThrow<string>('MAIL_PASSWORD'),
       },
     });
   }
@@ -41,7 +53,9 @@ export class MailerService {
     const html = await this.renderTemplate(template, context);
 
     const mailOptions = {
-      from: this.configService.getOrThrow<string>('MAIL_USER'),
+      from: this.isProduction
+        ? this.configService.getOrThrow<string>('MAIL_SENDER_PROD')
+        : this.configService.getOrThrow<string>('MAIL_USER'),
       to,
       subject,
       html,

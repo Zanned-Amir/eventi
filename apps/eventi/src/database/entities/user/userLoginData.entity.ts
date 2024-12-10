@@ -85,6 +85,13 @@ export class UserLoginData {
   m2fa_token?: string;
 
   @Column({
+    type: 'integer',
+    nullable: true,
+    default: 0,
+  })
+  m2fa_attempts?: number;
+
+  @Column({
     type: 'boolean',
     default: false,
   })

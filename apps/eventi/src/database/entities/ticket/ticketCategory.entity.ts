@@ -31,6 +31,11 @@ export class TicketCategory {
   ticket_category_description: string;
 
   @Column({
+    default: false,
+  })
+  hide: boolean;
+
+  @Column({
     type: 'decimal',
     precision: 15,
     scale: 2,

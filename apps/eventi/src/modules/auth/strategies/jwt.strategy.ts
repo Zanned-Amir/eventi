@@ -21,15 +21,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: TokenPayload) {
-    let user;
-    try {
-      user = await this.UsersService.getUser(payload.user_id);
+    const user = await this.UsersService.getUser(payload.user_id);
 
-      if (user.is_confirmed !== true) {
-        throw new UnauthorizedException('User is not confirmed');
-      }
-    } catch {
-      throw new UnauthorizedException('Invalid token');
+    if (user.is_confirmed !== true) {
+      throw new UnauthorizedException('User is not confirmed');
     }
 
     console.log('user', user);

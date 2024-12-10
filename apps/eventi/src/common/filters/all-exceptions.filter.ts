@@ -34,7 +34,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // Handle different types of exceptions
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      responseBody = exception.getResponse();
+      const errorResponse = exception.getResponse();
+
+      responseBody = {
+        statusCode: status,
+        message:
+          typeof errorResponse === 'string'
+            ? errorResponse
+            : errorResponse['message'] || 'Error',
+        timestamp: new Date().toISOString(),
+      };
     } else if (exception instanceof QueryFailedError) {
       status = HttpStatus.BAD_REQUEST; // You can change this to another status based on the error type
 
@@ -117,6 +126,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Send response with proper status and message
+
     httpAdapter.reply(ctx.getResponse(), responseBody, status);
   }
 }

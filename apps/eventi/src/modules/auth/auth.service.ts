@@ -24,6 +24,8 @@ import { Repository } from 'typeorm';
 import { createVerify } from 'crypto';
 import { LoginM2FADto } from './dto/LoginM2FADto';
 import { authenticator, totp } from 'otplib';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
 
 @Injectable()
 export class AuthService {
@@ -35,29 +37,44 @@ export class AuthService {
     private readonly notificationClient: ClientProxy,
     @InjectRepository(ConcertRole)
     private readonly concertRoleRepository: Repository<ConcertRole>,
+    @Inject(WINSTON_MODULE_PROVIDER)
+    private readonly logger: Logger,
   ) {}
 
   async register(
     createUserAccountDto: CreateUserAccountDto,
     createUserLoginDataDto: CreateUserLoginDataDto,
+    trackInfo: any,
   ) {
     const user = await this.usersService.createUser(createUserAccountDto, {
       ...createUserLoginDataDto,
     });
+
+    this.logger.log('user', {
+      message: 'New user registered',
+      user,
+      trackInfo,
+    });
     return user;
   }
-  //
-  async login(user: LoginRequestDto, res: Response) {
+
+  async login(user: LoginRequestDto, res: Response, trackInfo: any) {
     const deviceInfo = user.userAgent;
     const tokenPayload: TokenPayload = {
       user_id: user.user_id,
     };
 
+    if (user.is_confirmed === false) {
+      throw new UnauthorizedException(
+        'User is not confirmed please confirm your email',
+      );
+    }
     if (user.enabled_m2fa === true) {
       const mfa_token = this.jwtService.sign(tokenPayload, {
         secret: this.configService.getOrThrow<string>('JWT_MFA_SECRET'),
         expiresIn: '10m',
       });
+      totp.options = { step: 600, window: 1, digits: 6 };
 
       const secret = authenticator.generateSecret();
       const otp = totp.generate(secret);
@@ -66,6 +83,13 @@ export class AuthService {
         m2fa_token: mfa_token,
         m2fa_secret_otp: secret,
         m2fa_secret_otp_timestamp: new Date(),
+        m2fa_attempts: 0,
+      });
+
+      this.logger.log('user', {
+        message: 'User Triggered M2FA',
+        user,
+        trackInfo,
       });
 
       this.notificationClient.emit('mfa_otp_email', {
@@ -110,7 +134,13 @@ export class AuthService {
       is_in_blacklist: false,
     };
 
+    // store RefreshToken
     await this.usersService.createUserToken(userRefreshToken);
+
+    // update last_login_timestamp
+    await this.usersService.updateLoginData(user.user_id, {
+      last_login_timestamp: new Date(),
+    });
 
     res.clearCookie('jwt');
 
@@ -125,9 +155,15 @@ export class AuthService {
       secure: this.configService.getOrThrow('NODE_ENV') === 'production',
       expires: expiresRefreshToken,
     });
+
+    this.logger.log('user', {
+      message: 'User logged in',
+      user,
+      trackInfo,
+    });
   }
 
-  async loginM2fa(user: LoginM2FADto, res: Response) {
+  async loginM2fa(user: LoginM2FADto, res: Response, trackInfo: any) {
     const { mfa_token, otp } = user;
 
     const isValidToken = this.jwtService.verify(mfa_token, {
@@ -144,9 +180,24 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    if (foundedUser.m2fa_attempts > 3) {
+      this.usersService.updateLoginData(foundedUser.user_id, {
+        m2fa_attempts: 0,
+        m2fa_secret_otp: null,
+        m2fa_secret_otp_timestamp: null,
+        m2fa_token: null,
+      });
+
+      throw new UnauthorizedException('OTP attempts exceeded');
+    }
+
     const isValidOtp = totp.check(otp, foundedUser.m2fa_secret_otp);
 
     if (!isValidOtp) {
+      this.usersService.updateLoginData(foundedUser.user_id, {
+        m2fa_attempts: foundedUser.m2fa_attempts + 1,
+      });
+
       throw new UnauthorizedException('OTP is invalid or expired');
     }
 
@@ -205,9 +256,15 @@ export class AuthService {
       secure: this.configService.getOrThrow('NODE_ENV') === 'production',
       expires: expiresRefreshToken,
     });
+
+    this.logger.log('user', {
+      message: 'User logged in with M2FA',
+      foundedUser,
+      trackInfo,
+    });
   }
 
-  async logout(userId: number, res: Response) {
+  async logout(userId: number, res: Response, trackInfo: any) {
     // Invalidate all user tokens for the specified user
     await this.usersService.invalidateUserTokens(userId);
 
@@ -220,6 +277,20 @@ export class AuthService {
     res.clearCookie('Refresh', {
       httpOnly: true,
       secure: this.configService.getOrThrow('NODE_ENV') === 'production',
+    });
+
+    await this.usersService.updateLoginData(userId, {
+      last_login_timestamp: new Date(),
+    });
+
+    await this.usersService.updateLoginData(userId, {
+      last_activity_timestamp: new Date(),
+    });
+
+    this.logger.log('user', {
+      message: 'User logged out',
+      userId,
+      trackInfo,
     });
 
     return {
@@ -294,6 +365,10 @@ export class AuthService {
 
     const expiresAccessToken = new Date(Date.now() + accessTokenExpiry);
     const expiresRefreshToken = new Date(Date.now() + refreshTokenExpiry);
+
+    await this.usersService.updateLoginData(user.user_id, {
+      last_activity_timestamp: new Date(),
+    });
 
     const userRefreshToken: UserToken = {
       user_id: user.user_id,

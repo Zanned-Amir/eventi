@@ -9,6 +9,7 @@ import {
 } from '../entities/user';
 import { Genre } from '../entities/concert/genre.entity';
 import { Role } from '../entities/concert/role.entity';
+import { blue, green, yellow } from 'colorette'; // Import colorette colors
 
 export class MainSeeder implements Seeder {
   public async run(dataSource: DataSource): Promise<void> {
@@ -19,38 +20,30 @@ export class MainSeeder implements Seeder {
     const genreRepository = dataSource.getRepository(Genre);
     const roleConcert = dataSource.getRepository(Role);
 
-    console.log('Cleaning up existing data...');
+    console.log(blue('Cleaning up existing data...'));
 
     // Clean up existing data
     await dataSource.query(
       'TRUNCATE TABLE "user_login_data", "user_account", "user_role", "permission" CASCADE',
     );
 
-    console.log('Existing data cleaned up.');
+    console.log(green('Existing data cleaned up.'));
 
-    console.log('Seeding database with initial data...');
-    console.log('Creating permissions,genres, roles, and test users...');
+    console.log(blue('Seeding database with initial data...'));
+    console.log(
+      yellow('Creating permissions, genres, roles, and test users...'),
+    );
 
     const genres = [
-      {
-        genre_name: 'Rock',
-      },
-      {
-        genre_name: 'Pop',
-      },
-      {
-        genre_name: 'Jazz',
-      },
-      {
-        genre_name: 'Classical',
-      },
-      {
-        genre_name: 'Hip-hop',
-      },
+      { genre_name: 'Rock' },
+      { genre_name: 'Pop' },
+      { genre_name: 'Jazz' },
+      { genre_name: 'Classical' },
+      { genre_name: 'Hip-hop' },
     ];
 
     await genreRepository.save(genres);
-    console.log('Genres created');
+    console.log(green('Genres created'));
 
     const roleConcerts = [
       {
@@ -141,11 +134,10 @@ export class MainSeeder implements Seeder {
     ];
 
     await roleConcert.save(roleConcerts);
-    console.log('Concert roles created');
+    console.log(green('Concert roles created'));
 
     // Create Permissions with UPPERCASE and UNDERSCORE separated names
     const permissions = [
-      // Define your permissions here
       {
         permission_name: 'MANAGE_USERS',
         permission_description: 'Full user management',
@@ -202,14 +194,14 @@ export class MainSeeder implements Seeder {
 
     // Save Permissions
     const savedPermissions = await permissionRepository.save(permissions);
-    console.log('Permissions created');
+    console.log(green('Permissions created'));
 
     // Create Roles
     const roles = [
       {
         role_name: 'ADMIN',
         role_description: 'System administrator',
-        permissions: savedPermissions, // Admin gets all permissions
+        permissions: savedPermissions,
       },
       {
         role_name: 'EVENT_ORGANIZER',
@@ -277,7 +269,7 @@ export class MainSeeder implements Seeder {
 
     // Save Roles
     const savedRoles = await roleRepository.save(roles);
-    console.log('Roles created');
+    console.log(green('Roles created'));
 
     const adminRole = savedRoles.find((role) => role.role_name === 'ADMIN');
     const userRole = savedRoles.find((role) => role.role_name === 'USER');
@@ -300,9 +292,7 @@ export class MainSeeder implements Seeder {
       user_id: savedAdminAccount.user_id,
       username: 'admin_user',
       password: hashedPassword,
-      email: 'admin@example.com',
-      confirmation_token: 'confirm123',
-      recovery_token: 'recover123',
+      email: 'zannedamir4@gmail.com',
       is_confirmed: true,
       userAccount: savedAdminAccount,
     });
@@ -331,6 +321,6 @@ export class MainSeeder implements Seeder {
     });
     await userLoginDataRepository.save(userLoginData);
 
-    console.log('Admin and user accounts created');
+    console.log(green('Admin and user accounts created'));
   }
 }

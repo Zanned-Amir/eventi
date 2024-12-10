@@ -942,8 +942,7 @@ export class UsersService {
 
   async updateLoginData(user_id: number, data: any) {
     await this.userLoginDataRepository.update(user_id, data);
-    return this.userLoginDataRepository.findOne({
-      where: { user_id },
-    });
   }
+
+  async;
 }

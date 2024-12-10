@@ -33,6 +33,7 @@ import { Roles } from '../../common/decorators/role.decorator';
 import { Role } from '../../database/entities/user/userRole.entity';
 import { LoginM2FADto } from './dto/LoginM2FADto';
 import { UserAgent } from '../../common/decorators/User-agent.decoratos';
+import { TrackInfo } from '../../common/decorators/track-info.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -45,8 +46,13 @@ export class AuthController {
   async register(
     @Body('userAccount') userAccountDto: CreateUserAccountDto,
     @Body('userLoginData') userLoginDataDto: CreateUserLoginDataDto,
+    @TrackInfo() trackInfo: any,
   ) {
-    return await this.authService.register(userAccountDto, userLoginDataDto);
+    return await this.authService.register(
+      userAccountDto,
+      userLoginDataDto,
+      trackInfo,
+    );
   }
   @Public()
   @Post('login')
@@ -54,9 +60,10 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   async login(
     @CurrentUser() user: LoginRequestDto,
+    @TrackInfo() trackInfo: any,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return await this.authService.login(user, res);
+    return await this.authService.login(user, res, trackInfo);
   }
 
   @Public()
@@ -65,17 +72,22 @@ export class AuthController {
   async loginM2FA(
     @Body() user: LoginM2FADto,
     @UserAgent() userAgent: string,
+    @TrackInfo() trackInfo: any,
     @Res({ passthrough: true }) res: Response,
   ) {
     user.userAgent = userAgent;
-    return await this.authService.loginM2fa(user, res);
+    return await this.authService.loginM2fa(user, res, trackInfo);
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(@CurrentUser() user, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @CurrentUser() user,
+    @Res({ passthrough: true }) res: Response,
+    @TrackInfo() trackInfo: any,
+  ) {
     const user_id = user.user_id;
-    return await this.authService.logout(user_id, res);
+    return await this.authService.logout(user_id, res, trackInfo);
   }
 
   @Public()
@@ -99,7 +111,7 @@ export class AuthController {
 
   @Get('profile')
   async getProfile(@CurrentUser() user) {
-    return user;
+    return this.usersService.getUser(user.user_id);
   }
 
   @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
@@ -229,18 +241,20 @@ export class AuthController {
 
   // send it to the user's email
   @Public()
-  @Post('email-confirmation-send/:email')
-  async emailConfirmation(@Param('email') email: string) {
+  @Post('email-confirmation-send')
+  async emailConfirmation(@Body() EmailConfirmationDto: EmailConfirmationDto) {
+    const email = EmailConfirmationDto.email;
     return await this.authService.confirmEmail(email);
   }
 
   // send it to the user's email and the user will click on the link this url
   @Public()
-  @Post('confirm-email/:email/:confirmation_token')
+  @Post('confirm-email')
   async confirmEmail(
-    @Param('email') email: string,
-    @Param('confirmation_token') confirmation_token: string,
+    @Body() EmailConfirmationDto: EmailConfirmationDto,
+    @Body('confirmation_token') confirmation_token: string,
   ) {
+    const email = EmailConfirmationDto.email;
     return await this.authService.confirmEmailWithToken(
       confirmation_token,
       email,
@@ -257,12 +271,13 @@ export class AuthController {
 
   // send it to the user's email and the user will click on the link this url
   @Public()
-  @Post('password-change/:email/:recovery_token')
+  @Post('password-change')
   async passwordChange(
-    @Body('newPassword') newPassword: string,
-    @Param('email') email: string,
-    @Param('recovery_token') recovery_token: string,
+    @Body('new_password') newPassword: string,
+    @Body() EmailConfirmationDto: EmailConfirmationDto,
+    @Body('recovery_token') recovery_token: string,
   ) {
+    const email = EmailConfirmationDto.email;
     return await this.authService.changePasswordWithToken({
       newPassword,
       recovery_token,

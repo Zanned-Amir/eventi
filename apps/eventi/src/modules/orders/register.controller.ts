@@ -10,7 +10,7 @@ import { Public } from '../../common/decorators/public.decorator';
 export class RegisterController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Get('/register')
   async getRegisters() {
     const registers = await this.ordersService.getRegisters();

@@ -41,13 +41,19 @@ import { Payment } from '../../database/entities/payment/payment.entity';
     {
       provide: NOTIFICATION_SERVICE,
       useFactory: (configService: ConfigService) => {
-        const RMQ_URL_DEV = configService.get('RMQ_URL_DEV');
+        const rmqUrl =
+          configService.get<string>('NODE_ENV') === 'production'
+            ? configService.get<string>('RMQ_URL_PROD')
+            : configService.get<string>('RMQ_URL_DEV');
 
         return ClientProxyFactory.create({
           transport: Transport.RMQ,
           options: {
-            urls: [RMQ_URL_DEV],
+            urls: [rmqUrl],
             queue: ORDER_NOTIFICATION_QUEUE,
+            queueOptions: {
+              durable: true,
+            },
           },
         });
       },
@@ -56,13 +62,19 @@ import { Payment } from '../../database/entities/payment/payment.entity';
     {
       provide: ORDERS_SERVICE,
       useFactory: (configService: ConfigService) => {
-        const RMQ_URL_DEV = configService.get('RMQ_URL_DEV');
+        const rmqUrl =
+          configService.get<string>('NODE_ENV') === 'production'
+            ? configService.get<string>('RMQ_URL_PROD')
+            : configService.get<string>('RMQ_URL_DEV');
 
         return ClientProxyFactory.create({
           transport: Transport.RMQ,
           options: {
-            urls: [RMQ_URL_DEV],
+            urls: [rmqUrl],
             queue: ORDER_PAYMENT_QUEUE,
+            queueOptions: {
+              durable: true,
+            },
           },
         });
       },

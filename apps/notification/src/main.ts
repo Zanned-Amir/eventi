@@ -10,28 +10,43 @@ import {
 
 async function bootstrap() {
   const app = await NestFactory.create(NotificationModule);
-  app.get(ConfigService);
+
+  const configService = app.get(ConfigService);
+
+  const rmqUrl =
+    configService.get<string>('NODE_ENV') === 'production'
+      ? configService.get<string>('RMQ_URL_PROD')
+      : configService.get<string>('RMQ_URL_DEV');
   app.connectMicroservice({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://amiroso:amiroso@localhost:5672'],
+      urls: [rmqUrl],
       queue: AUTH_NOTIFICATION_QUEUE,
     },
-  });
-
-  app.connectMicroservice({
-    transport: Transport.RMQ,
-    options: {
-      urls: ['amqp://amiroso:amiroso@localhost:5672'],
-      queue: ORDER_NOTIFICATION_QUEUE,
+    queueOptions: {
+      durable: true,
     },
   });
 
   app.connectMicroservice({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://amiroso:amiroso@localhost:5672'],
+      urls: [rmqUrl],
+      queue: ORDER_NOTIFICATION_QUEUE,
+    },
+    queueOptions: {
+      durable: true,
+    },
+  });
+
+  app.connectMicroservice({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rmqUrl],
       queue: AUTH_STAFF_NOTIFICATION_QUEUE,
+    },
+    queueOptions: {
+      durable: true,
     },
   });
 

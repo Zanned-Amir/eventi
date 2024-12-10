@@ -6,48 +6,48 @@ import * as cookieParser from 'cookie-parser';
 import { Transport } from '@nestjs/microservices';
 import { PAYMENT_ORDER_QUEUE } from '@app/common/constants/service';
 import * as os from 'os';
-import * as morgan from 'morgan';
 import {
   WINSTON_MODULE_NEST_PROVIDER,
   WINSTON_MODULE_PROVIDER,
 } from 'nest-winston';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
-
+  const configService = app.get(ConfigService);
+  const rmqUrl =
+    configService.get<string>('NODE_ENV') === 'production'
+      ? configService.get<string>('RMQ_URL_PROD')
+      : configService.get<string>('RMQ_URL_DEV');
   // Configure RabbitMQ microservice
   app.connectMicroservice({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://amiroso:amiroso@localhost:5672'],
+      urls: [rmqUrl],
       queue: PAYMENT_ORDER_QUEUE,
+      queueOptions: {
+        durable: true,
+      },
     },
   });
 
   const httpAdapterHost = app.get(HttpAdapterHost);
   const logger = app.get(WINSTON_MODULE_PROVIDER);
 
-  // Global exception filter
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost, logger));
 
-  // Use validation pipes globally
   app.useGlobalPipes(new ValidationPipe());
 
   app.useGlobalInterceptors(new LoggingInterceptor(logger));
 
-  // Use cookie parser middleware
   app.use(cookieParser());
 
-  // Get port from environment variables
-  const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
 
-  // Retrieve server's IP address
   const networkInterfaces = os.networkInterfaces();
-  let ipAddress = 'localhost'; // Default fallback
+  let ipAddress = 'localhost';
 
   for (const key in networkInterfaces) {
     const net = networkInterfaces[key];
@@ -61,23 +61,36 @@ async function bootstrap() {
     }
   }
 
-  app.use(morgan('tiny'));
-
   // Start microservices
   app.startAllMicroservices();
 
   app.enableCors({
-    origin: '*', // Allow all origins
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Accept, Authorization',
+    origin: '*',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    credentials: true,
   });
+
+  const options = new DocumentBuilder()
+    .setTitle('Eventi API')
+    .setDescription('Reservations and events management API')
+    .setVersion('1.0.0')
+    .build();
+
+  SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, options));
 
   // Start HTTP server
   await app.listen(port, '0.0.0.0');
 
   // Log the full address
 
-  logger.log('info', `Server running at http://${ipAddress}:${port}`);
+  logger.log(
+    'info',
+    `[main app] Server running at http://${ipAddress}:${port}`,
+  );
+  logger.log(
+    'info',
+    `[main app] RabbitMQ connected to queue: ${PAYMENT_ORDER_QUEUE}`,
+  );
 }
 
 bootstrap();
