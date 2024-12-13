@@ -14,6 +14,7 @@ import {
 } from '../../database/entities/user/index';
 import { OrdersModule } from '../orders/orders.module';
 import { TicketModule } from '../ticket/ticket.module';
+import { FileModule } from '../file/file.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { TicketModule } from '../ticket/ticket.module';
     ]),
     OrdersModule,
     TicketModule,
+    FileModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],

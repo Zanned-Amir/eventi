@@ -1,4 +1,10 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Artist,
@@ -42,6 +48,11 @@ import { ClientProxy } from '@nestjs/microservices';
 import * as QRCode from 'qrcode';
 import { createSign } from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import { FileService } from '../file/file.service';
+import {
+  AssociationTypes,
+  EntityTypes,
+} from '../../database/entities/file/fileAssociation.entity';
 
 @Injectable()
 export class ConcertService {
@@ -67,6 +78,8 @@ export class ConcertService {
     private registrationRuleRepository: Repository<RegistrationRule>,
 
     private readonly configService: ConfigService,
+
+    private readonly FileService: FileService,
 
     @Inject(AUTH_STAFF_SERVICE)
     private readonly authStaffClient: ClientProxy,
@@ -104,6 +117,20 @@ export class ConcertService {
   async createConcert(createConcertDto: CreateConcertDto) {
     const concert = this.concertRepository.create(createConcertDto);
     return await this.concertRepository.save(concert);
+  }
+
+  async getConcertsImages(concert_id: number) {
+    const concert = await this.concertRepository.findOne({
+      where: { concert_id },
+    });
+    if (!concert) {
+      throw new HttpException('Concert not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.FileService.getImagesForEntity(
+      concert_id,
+      EntityTypes.CONCERT,
+    );
   }
 
   async getConcerts(
@@ -413,6 +440,66 @@ export class ConcertService {
     return await queryBuilder.getMany();
   }
 
+  async uploadConcertMemberPicture(
+    user_id: number,
+    concert_member_id: number,
+    file: Express.Multer.File,
+  ) {
+    const concertMember = await this.concertMemberRepository.findOne({
+      where: { concert_member_id },
+    });
+    if (!concertMember) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.FileService.uploadAndAssignImage(
+      file,
+      concert_member_id,
+      EntityTypes.CONCERT_MEMBER,
+      AssociationTypes.PROFILE_PICTURE,
+      1,
+      true,
+      user_id,
+    );
+  }
+
+  async deleteConcertMemberPicture(concert_member_id: number) {
+    const concertMember = await this.concertMemberRepository.findOne({
+      where: { concert_member_id },
+    });
+    if (!concertMember) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    const result = await this.FileService.removeImage(
+      concert_member_id,
+      EntityTypes.CONCERT_MEMBER,
+      AssociationTypes.PROFILE_PICTURE,
+    );
+
+    if (!result) {
+      throw new HttpException('Artist picture not found', HttpStatus.NOT_FOUND);
+    }
+
+    return {
+      message: 'Artist picture deleted successfully',
+    };
+  }
+
+  async getConcertMemberPicture(concert_member_id: number) {
+    const concertMember = await this.concertMemberRepository.findOne({
+      where: { concert_member_id },
+    });
+    if (!concertMember) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.FileService.getImagesForEntity(
+      concert_member_id,
+      EntityTypes.CONCERT_MEMBER,
+    );
+  }
+
   async findConcertMemberById(id: number) {
     return await this.concertMemberRepository.findOneOrFail({
       where: { concert_member_id: id },
@@ -685,6 +772,66 @@ export class ConcertService {
 
   async deleteArtist(id: number) {
     await this.artistRepository.delete(id);
+  }
+
+  async uploadArtistPicture(
+    user_id: number,
+    artist_id: number,
+    file: Express.Multer.File,
+  ) {
+    const artist = await this.artistRepository.findOne({
+      where: { artist_id },
+    });
+    if (!artist) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.FileService.uploadAndAssignImage(
+      file,
+      artist_id,
+      EntityTypes.ARTIST,
+      AssociationTypes.ARTIST_PICTURE,
+      1,
+      true,
+      user_id,
+    );
+  }
+
+  async deleteArtistPicture(artist_id: number) {
+    const artist = await this.artistRepository.findOne({
+      where: { artist_id },
+    });
+    if (!artist) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    const result = await this.FileService.removeImage(
+      artist_id,
+      EntityTypes.ARTIST,
+      AssociationTypes.ARTIST_PICTURE,
+    );
+
+    if (!result) {
+      throw new HttpException('Artist picture not found', HttpStatus.NOT_FOUND);
+    }
+
+    return {
+      message: 'Artist picture deleted successfully',
+    };
+  }
+
+  async getArtistPicture(artist_id: number) {
+    const artist = await this.artistRepository.findOne({
+      where: { artist_id },
+    });
+    if (!artist) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.FileService.getImagesForEntity(
+      artist_id,
+      EntityTypes.ARTIST,
+    );
   }
 
   async createRegistrationRule(

@@ -3,13 +3,10 @@ import {
   BeforeUpdate,
   Column,
   Entity,
-  JoinColumn,
   OneToMany,
-  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ConcertRole } from './concertRole.entity';
-import { FileAssociation } from '../file';
 
 @Entity()
 export class ConcertMember {
@@ -34,10 +31,6 @@ export class ConcertMember {
 
   @OneToMany(() => ConcertRole, (concertRole) => concertRole.concertMember)
   concertRoles: ConcertRole[];
-
-  @ManyToOne(() => FileAssociation, (FileAssociation) => FileAssociation.file)
-  @JoinColumn({ name: 'photo_id', referencedColumnName: 'file_id' }) // Reference file_id
-  photo?: FileAssociation;
 
   @BeforeInsert()
   @BeforeUpdate()

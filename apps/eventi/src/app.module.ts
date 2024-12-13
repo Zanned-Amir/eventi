@@ -20,9 +20,8 @@ import { winstonConfig } from './config/logger.config';
 import { TrackingMiddleware } from './common/middleware/tracking.middleware';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JobModule } from './modules/jobs/job.module';
-import { MulterModule } from '@nestjs/platform-express';
-import { File_UPLOAD_PATH } from './common/constants/variable';
 import { FileModule } from './modules/file/file.module';
+import { StatsModule } from './modules/stats/stats.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -32,18 +31,21 @@ import { FileModule } from './modules/file/file.module';
     }),
     ScheduleModule.forRoot(),
     FileModule,
+    /*
     MulterModule.register({
       dest: File_UPLOAD_PATH,
       limits: {
         fileSize: 1024 * 1024 * 5, // 5MB
       },
     }),
+    */
     JobModule,
     WinstonLoggerModule,
     WinstonModule.forRoot({
       ...winstonConfig,
       handleExceptions: true, // Additional exception handling
     }),
+    StatsModule,
     DatabaseModule,
     AuthModule,
     UsersModule,

@@ -100,15 +100,6 @@ export class AuthController {
     return await this.authService.refreshToken(user, res);
   }
 
-  @Post('forgot-password')
-  async forgotPassword() {}
-
-  @Post('reset-password/:token')
-  async resetPassword() {}
-
-  @Post('confirm-account/:token')
-  async confirmAccount() {}
-
   @Get('profile')
   async getProfile(@CurrentUser() user) {
     return this.usersService.getUser(user.user_id);
@@ -125,7 +116,7 @@ export class AuthController {
     };
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Post('permissions')
   async createPermissions(@Body() createPermission: CreatePermissionDto) {
     const data = await this.usersService.createPermission(createPermission);
@@ -135,7 +126,7 @@ export class AuthController {
     };
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Patch('permissions/:id')
   async updatePermissions(
     @Param('id', ParseIntPipe) id: number,
@@ -151,7 +142,7 @@ export class AuthController {
     };
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Delete('permissions/:id')
   async deletePermissions(@Param('id', ParseIntPipe) id: number) {
     const result = await this.usersService.deletePermission(id);
@@ -164,7 +155,7 @@ export class AuthController {
     }
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   @Post('permissions/:permission_id/users/:id')
   async assignPermissionToUser(
     @Param('id', ParseIntPipe) id: number,
@@ -284,7 +275,7 @@ export class AuthController {
       email,
     });
   }
-  @Public()
+
   @Roles(Role.ADMIN, Role.SUPPORT_STAFF, Role.TICKET_VERIFIER)
   @Get('check/concert/:concert_id/concert-role/:concert_role_id')
   async checkConcertMember(

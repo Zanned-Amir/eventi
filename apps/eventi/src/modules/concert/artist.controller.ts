@@ -7,13 +7,21 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ConcertService } from './concert.service';
 import { CreateArtistDto } from './dto/Create/CreateArtistDto';
 import { FindArtistDto } from './dto/Find/FindArtistDto';
 import { Public } from '../../common/decorators/public.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageFileFilter } from '../../utils/file.utils';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
 
 @Controller('artist')
+@Roles(Role.ADMIN, Role.SUPPORT_STAFF, Role.EVENT_ORGANIZER)
 export class ArtistController {
   constructor(private readonly concertService: ConcertService) {}
 
@@ -24,6 +32,7 @@ export class ArtistController {
     return { status: 'success', data: artists };
   }
 
+  @Public()
   @Get(':id')
   async findArtistById(@Param('id') id: number) {
     const artist = await this.concertService.findArtistById(id);
@@ -49,5 +58,40 @@ export class ArtistController {
   async deleteArtist(@Param('id') id: number) {
     await this.concertService.deleteArtist(id);
     return { status: 'success', message: 'Artist deleted successfully' };
+  }
+
+  @Post(':id/upload-picture')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 1024 * 1024 * 5 },
+      fileFilter: imageFileFilter,
+    }),
+  )
+  async uploadArtistPicture(
+    @Param('id') id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user,
+  ) {
+    console.log('file', file);
+    const artist = await this.concertService.uploadArtistPicture(
+      user.user_id,
+      id,
+      file,
+    );
+    return { status: 'success', data: artist };
+  }
+
+  @Delete(':id/delete-picture')
+  async deleteArtistPicture(@Param('id') id: number) {
+    const message = await this.concertService.deleteArtistPicture(id);
+
+    return { status: 'success', message };
+  }
+
+  @Public()
+  @Get(':id/picture')
+  async getArtistPicture(@Param('id') id: number) {
+    const picture = await this.concertService.getArtistPicture(id);
+    return { status: 'success', data: picture };
   }
 }

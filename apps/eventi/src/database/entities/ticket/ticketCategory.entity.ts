@@ -31,7 +31,7 @@ export class TicketCategory {
   ticket_category_description: string;
 
   @Column({
-    default: false,
+    default: true,
   })
   hide: boolean;
 

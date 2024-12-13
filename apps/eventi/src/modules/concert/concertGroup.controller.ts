@@ -9,8 +9,11 @@ import {
 } from '@nestjs/common';
 import { ConcertService } from './concert.service';
 import { CreateConcertGroupDto, UpdateConcertGroupDto } from './dto';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
 
 @Controller('concert-group')
+@Roles(Role.ADMIN, Role.SUPPORT_STAFF, Role.EVENT_ORGANIZER)
 export class ConcertGroupController {
   constructor(private readonly concertService: ConcertService) {}
 

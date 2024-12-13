@@ -9,8 +9,12 @@ import {
 } from '@nestjs/common';
 import { ConcertService } from './concert.service';
 import { CreateVenueDto, UpdateVenueDto } from './dto';
+import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
 
 @Controller('venue')
+@Roles(Role.ADMIN, Role.SUPPORT_STAFF, Role.EVENT_ORGANIZER)
 export class VenueController {
   constructor(private readonly concertService: ConcertService) {}
 
@@ -20,6 +24,7 @@ export class VenueController {
     return { status: 'success', data: venues };
   }
 
+  @Public()
   @Get(':id')
   async findVenueById(@Param('id') id: number) {
     const venue = await this.concertService.findVenueById(id);

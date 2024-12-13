@@ -10,8 +10,11 @@ import {
 } from '@nestjs/common';
 import { ConcertService } from './concert.service';
 import { FindRegistrationRuleDto } from './dto/Find/FindRegistrationRuleDto';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
 
 @Controller('registration-rule')
+@Roles(Role.ADMIN, Role.SUPPORT_STAFF, Role.EVENT_ORGANIZER)
 export class RegistrationRuleController {
   constructor(private readonly concertService: ConcertService) {}
 

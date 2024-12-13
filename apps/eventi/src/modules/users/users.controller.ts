@@ -9,6 +9,8 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
@@ -23,6 +25,8 @@ import { TicketService } from '../ticket/ticket.service';
 import { Roles } from '../../common/decorators/role.decorator';
 import { Role } from '../../database/entities/user/userRole.entity';
 import { FindUsersDto } from './dto/FindUsersDto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageFileFilter } from '../../utils/file.utils';
 
 @Controller('users')
 export class UsersController {
@@ -32,9 +36,46 @@ export class UsersController {
     private readonly ticketService: TicketService,
   ) {}
 
-  @Get('test')
-  async test() {
-    return 'test';
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
+  @Get('user-picture/:id')
+  async getUserPicture(@Param('id', ParseIntPipe) id: number) {
+    const profilePicture = await this.usersService.getProfilePicture(id);
+    return {
+      status: 'success',
+      data: profilePicture,
+    };
+  }
+
+  @Get('profile-picture')
+  async getProfilePicture(@CurrentUser() user) {
+    const id = user.user_id;
+    const profilePicture = await this.usersService.getProfilePicture(id);
+    return {
+      status: 'success',
+      data: profilePicture,
+    };
+  }
+
+  @Post('profile-picture')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 1024 * 1024 * 5 },
+      fileFilter: imageFileFilter,
+    }),
+  )
+  uploadFile(@UploadedFile() file: Express.Multer.File, @CurrentUser() user) {
+    const user_id = user.user_id;
+    return this.usersService.uploadProfilePicture(user_id, file);
+  }
+
+  @Delete('profile-picture')
+  async deleteProfilePicture(@CurrentUser() user) {
+    const user_id = user.user_id;
+    const message = await this.usersService.deleteProfilePicture(user_id);
+    return {
+      status: 'success',
+      message,
+    };
   }
 
   // user account

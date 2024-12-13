@@ -18,7 +18,6 @@ import { Ticket } from '../ticket/ticket.entity';
 import { TicketCategory } from '../ticket/ticketCategory.entity';
 import { Register } from '../order';
 import { RegistrationRule } from './RegistrationRule.entity';
-import { FileAssociation } from '../file';
 
 @Entity()
 export class Concert {
@@ -56,7 +55,7 @@ export class Concert {
 
   @Column({
     type: 'boolean',
-    default: true,
+    default: false,
   })
   is_active: boolean;
 
@@ -102,13 +101,6 @@ export class Concert {
     (registrationRule) => registrationRule.concert,
   )
   registrationRules: RegistrationRule[];
-
-  @OneToMany(() => FileAssociation, (fileAssociation) => fileAssociation.file)
-  @JoinColumn({
-    referencedColumnName: 'entity_id',
-    name: 'concert_id',
-  })
-  photos: FileAssociation[];
 
   @BeforeInsert()
   @BeforeUpdate()

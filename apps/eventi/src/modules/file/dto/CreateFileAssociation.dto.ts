@@ -1,5 +1,5 @@
 // createFileAssociation.dto.ts
-import { IsString, IsInt } from 'class-validator';
+import { IsString, IsInt, IsOptional } from 'class-validator';
 
 export class CreateFileAssociationDto {
   @IsInt()
@@ -12,5 +12,6 @@ export class CreateFileAssociationDto {
   entity_type: string;
 
   @IsString()
-  file_key: string;
+  @IsOptional()
+  association_type: string;
 }

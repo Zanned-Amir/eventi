@@ -25,6 +25,7 @@ import { AUTH_STAFF_NOTIFICATION_QUEUE } from '@app/common/constants/service';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { AUTH_STAFF_SERVICE } from '../../../../../libs/common/src/constants/service';
+import { FileModule } from '../file/file.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AUTH_STAFF_SERVICE } from '../../../../../libs/common/src/constants/ser
       Role,
       RegistrationRule,
     ]),
+    FileModule,
   ],
   providers: [
     ConcertService,

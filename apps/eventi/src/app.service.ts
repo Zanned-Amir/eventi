@@ -11,7 +11,10 @@ export class AppService {
   ) {}
 
   async onModuleInit() {
+    // np: mongodb connection was commented out with mongodb loger because i don't wanna  overcomplicate the code
+    /*
     this.logger.log('Initializing the application...');
     await testMongoDBConnection(this.loggerw);
+    */
   }
 }

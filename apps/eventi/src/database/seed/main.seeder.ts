@@ -190,6 +190,10 @@ export class MainSeeder implements Seeder {
         permission_name: 'VIEW_VENDOR_SALES_REPORTS',
         permission_description: 'View sales reports for vendors',
       },
+      {
+        permission_name: 'CHECK_IN',
+        permission_description: 'Check access to concert',
+      },
     ];
 
     // Save Permissions
@@ -263,6 +267,14 @@ export class MainSeeder implements Seeder {
         role_description: 'Validates tickets at the event entrance',
         permissions: savedPermissions.filter((p) =>
           ['VIEW_EVENT_RESERVATIONS'].includes(p.permission_name),
+        ),
+      },
+
+      {
+        role_name: 'SECURITY_GUARD',
+        role_description: 'Ensures safety and security at the event',
+        permissions: savedPermissions.filter((p) =>
+          ['VIEW_EVENT_RESERVATIONS', 'CHECK_IN'].includes(p.permission_name),
         ),
       },
     ];

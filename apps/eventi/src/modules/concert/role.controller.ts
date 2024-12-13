@@ -11,8 +11,11 @@ import {
 import { ConcertService } from './concert.service';
 import { CreateRoleDto, UpdateRoleDto } from './dto';
 import { FindRoleDto } from './dto/Find/FindRoleDto';
+import { Roles } from '../../common/decorators/role.decorator';
+import { Role } from '../../database/entities/user/userRole.entity';
 
 @Controller('role')
+@Roles(Role.ADMIN, Role.SUPPORT_STAFF, Role.EVENT_ORGANIZER)
 export class RoleController {
   constructor(private readonly concertService: ConcertService) {}
 

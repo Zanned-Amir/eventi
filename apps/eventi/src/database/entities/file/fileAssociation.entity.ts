@@ -23,9 +23,6 @@ export class FileAssociation {
   @Column({ length: 50 })
   entity_type: string;
 
-  @Column({})
-  file_key: string;
-
   @Column({ length: 50, nullable: true })
   association_type?: string;
 
@@ -35,9 +32,11 @@ export class FileAssociation {
   @DeleteDateColumn()
   deleted_at?: Date;
 
-  @ManyToOne(() => File, (File) => File.fileAssociations)
-  @JoinColumn({ name: 'photo_id', referencedColumnName: 'file_id' })
-  file?: File;
+  @ManyToOne(() => File, (file) => file.fileAssociations, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'file_id', referencedColumnName: 'file_id' })
+  file: File;
 }
 
 export enum EntityTypes {
@@ -50,4 +49,12 @@ export enum EntityTypes {
   CONCERT_MEMBER = 'concert_member',
   CONCERT_GROUP = 'concert_group',
   TICKET_CATEGORY = 'ticket_category',
+}
+
+export enum AssociationTypes {
+  PROFILE_PICTURE = 'profile_picture',
+  CONCERT_PICTURE = 'concert_picture',
+  VENUE_PICTURE = 'venue_picture',
+  ARTIST_PICTURE = 'artist_picture',
+  CONCERT_MEMBER_PICTURE = 'concert_member_picture',
 }

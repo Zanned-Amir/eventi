@@ -26,6 +26,11 @@ import {
 import { FindUsersDto } from './dto/FindUsersDto';
 import { compare, hash } from 'bcrypt';
 import { CreateUserTokenDto } from './dto/CreateUserTokenDto';
+import { FileService } from '../file/file.service';
+import {
+  AssociationTypes,
+  EntityTypes,
+} from '../../database/entities/file/fileAssociation.entity';
 @Injectable()
 export class UsersService {
   constructor(
@@ -39,7 +44,10 @@ export class UsersService {
     private readonly permissionRepository: Repository<Permission>,
     @InjectRepository(UserTokens)
     private readonly userTokensRepository: Repository<UserTokens>,
+
     private readonly entityManger: EntityManager,
+
+    private readonly fileService: FileService,
   ) {}
 
   // crud user (userAccount + userLoginData)
@@ -944,5 +952,42 @@ export class UsersService {
     await this.userLoginDataRepository.update(user_id, data);
   }
 
-  async;
+  async uploadProfilePicture(user_id: number, file: Express.Multer.File) {
+    return await this.fileService.uploadAndAssignImage(
+      file,
+      user_id,
+      EntityTypes.USER_ACCOUNT,
+      AssociationTypes.PROFILE_PICTURE,
+      1,
+      true,
+      user_id,
+    );
+  }
+
+  async getProfilePicture(user_id: number) {
+    const profilePicture = await this.fileService.getImagesForEntity(
+      user_id,
+      EntityTypes.USER_ACCOUNT,
+    );
+
+    return profilePicture;
+  }
+
+  async deleteProfilePicture(user_id: number) {
+    const result = await this.fileService.removeImage(
+      user_id,
+      EntityTypes.USER_ACCOUNT,
+      AssociationTypes.PROFILE_PICTURE,
+    );
+
+    if (result) {
+      return {
+        message: 'Profile picture deleted successfully',
+      };
+    }
+
+    return {
+      message: 'Profile picture not found',
+    };
+  }
 }

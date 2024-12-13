@@ -8,6 +8,7 @@ export const CurrentUser = createParamDecorator(
 
 const getCurrentUserByContext = (context: ExecutionContext) => {
   const request = context.switchToHttp().getRequest();
+
   request.user.userAgent = request.headers['user-agent'] || 'unknown';
   return request.user;
 };

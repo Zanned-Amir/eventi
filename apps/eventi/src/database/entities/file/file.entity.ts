@@ -11,7 +11,7 @@ import { FileAssociation } from './fileAssociation.entity';
 
 @Entity('file')
 export class File {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'integer' })
   file_id: number;
 
   @Column({ length: 255 })
@@ -59,6 +59,9 @@ export class File {
   indexed_uploaded_by?: number;
 
   // One-to-many relationship with FileAssociation
-  @OneToMany(() => FileAssociation, (fileAssociation) => fileAssociation.file)
+  @OneToMany(() => FileAssociation, (fileAssociation) => fileAssociation.file, {
+    cascade: true, // Ensures related entities are updated or deleted automatically
+    onDelete: 'CASCADE',
+  })
   fileAssociations: FileAssociation[];
 }

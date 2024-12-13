@@ -32,7 +32,7 @@ datasource
     if (existingUsersCount > 0 && !force) {
       console.log(
         red(
-          'Database has already been seeded. Use the --force option to reseed.',
+          'Database has already been seeded. Use the -force option to reseed.',
         ),
       );
       process.exit(0);

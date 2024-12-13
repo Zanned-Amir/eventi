@@ -21,6 +21,9 @@
     "seed": "ts-node apps/eventi/src/database/seed/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.705.0",
+    "@aws-sdk/client-signer": "^3.699.0",
+    "@aws-sdk/s3-request-presigner": "^3.709.0",
     "@azure/identity": "^4.5.0",
     "@azure/keyvault-keys": "^4.9.0",
     "@nestjs/common": "^10.0.0",
@@ -60,6 +63,7 @@
     "reflect-metadata": "^0.2.0",
     "request-ip": "^3.3.0",
     "rxjs": "^7.8.1",
+    "sharp": "^0.33.5",
     "stripe": "^17.2.1",
     "twilio": "^5.3.6",
     "typeorm-extension": "^3.6.1",
