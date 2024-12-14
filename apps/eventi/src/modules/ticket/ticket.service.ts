@@ -8,7 +8,7 @@ import { CreateTicketCategoryDto } from './dto/CreateTicketCategoryDto';
 import { UpdateTicketCategoryDto } from './dto/UpdateTicketCategoryDto';
 import { v4 as uuidv4 } from 'uuid';
 import * as QRCode from 'qrcode';
-import { compare, hash } from 'bcrypt';
+import { hash } from 'bcrypt';
 import { FindTicketsDto } from './dto/FindTicketsDto';
 import { FindTicketsCategoriesDto } from './dto/FindTicketsCategoriesDto';
 import { createVerify } from 'crypto';
@@ -484,7 +484,7 @@ export class TicketService {
       'PUBLIC_KEY_SIGNATURE',
     );
 
-    const qrData = `${ticket.ticket_id}:${ticket.ticket_code}`;
+    const qrData = `${ticket.ticket_id}:${hashed_ticket_code}`;
     const verify = createVerify('SHA256');
     verify.update(qrData);
     verify.end(); // Ensure you end the verification process
@@ -501,7 +501,7 @@ export class TicketService {
       throw new HttpException('Ticket not found', HttpStatus.NOT_FOUND);
     }
 
-    const isMatch = await compare(ticket.ticket_code, hashed_ticket_code);
+    const isMatch = hashed_ticket_code === ticket.ticket_code;
 
     if (!isMatch) {
       throw new HttpException('Invalid ticket code', HttpStatus.BAD_REQUEST);

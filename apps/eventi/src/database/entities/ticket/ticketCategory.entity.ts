@@ -50,7 +50,7 @@ export class TicketCategory {
 
   @Column({
     type: 'varchar',
-    unique: true,
+    unique: false,
   })
   area: string;
   @Column({

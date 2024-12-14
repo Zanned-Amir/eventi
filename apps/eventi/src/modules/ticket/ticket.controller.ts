@@ -129,8 +129,8 @@ export class TicketController {
     };
   }
 
+  @Public()
   @Get('category/:id')
-  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getTicketCategory(@Param('id', ParseIntPipe) id: number) {
     const ticketCategory = await this.ticketService.getTicketCategoryById(id);
     if (!ticketCategory) {

@@ -5,7 +5,6 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Genre } from './genre.entity';
@@ -31,7 +30,7 @@ export class Artist {
   })
   genres: Genre[];
 
-  @OneToMany(() => Concert, (concert) => concert.artists)
+  @ManyToMany(() => Concert, (concert) => concert.artists)
   concerts: Concert[];
 
   @BeforeInsert()

@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { testMongoDBConnection } from './config/mongodb.connection';
 import { Logger as Loggerwinston } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 

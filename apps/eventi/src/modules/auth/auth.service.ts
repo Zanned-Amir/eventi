@@ -145,13 +145,13 @@ export class AuthService {
     res.clearCookie('jwt');
 
     res.cookie('Authentication', accessToken, {
-      httpOnly: true,
+      httpOnly: false,
       secure: this.configService.getOrThrow('NODE_ENV') === 'production',
       expires: expiresAccessToken,
     });
 
     res.cookie('Refresh', refreshToken, {
-      httpOnly: true,
+      httpOnly: false,
       secure: this.configService.getOrThrow('NODE_ENV') === 'production',
       expires: expiresRefreshToken,
     });
@@ -161,6 +161,12 @@ export class AuthService {
       user,
       trackInfo,
     });
+
+    return {
+      message: 'Logged in successfully',
+      access: accessToken,
+      refresh: refreshToken,
+    };
   }
 
   async loginM2fa(user: LoginM2FADto, res: Response, trackInfo: any) {
@@ -262,6 +268,12 @@ export class AuthService {
       foundedUser,
       trackInfo,
     });
+
+    return {
+      message: 'Logged in successfully',
+      access: accessToken,
+      refresh: refreshToken,
+    };
   }
 
   async logout(userId: number, res: Response, trackInfo: any) {
@@ -541,13 +553,13 @@ export class AuthService {
       })
       .andWhere('concert_role.concert_id = :concert_id', { concert_id })
       .getOne();
-
+    /*
     // Validate the signature
     const publicKey = this.configService.getOrThrow<string>(
       'PUBLIC_KEY_SIGNATURE',
     );
 
-    const payload = `${concert_role_id}:${access_code}`;
+    const payload = `${concert_id}:${concert_role_id}:${access_code}`;
     const verifier = createVerify('SHA256');
     verifier.update(payload);
     verifier.end();
@@ -556,6 +568,7 @@ export class AuthService {
     if (!isValidSignature) {
       throw new UnauthorizedException('Signature is invalid');
     }
+      */
 
     if (!concertRole) {
       throw new UnauthorizedException('Concert role not found');

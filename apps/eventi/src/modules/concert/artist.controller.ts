@@ -25,6 +25,9 @@ import { Role } from '../../database/entities/user/userRole.entity';
 export class ArtistController {
   constructor(private readonly concertService: ConcertService) {}
 
+
+  
+
   @Public()
   @Get()
   async findAllArtists(@Query() query: FindArtistDto) {
@@ -58,6 +61,27 @@ export class ArtistController {
   async deleteArtist(@Param('id') id: number) {
     await this.concertService.deleteArtist(id);
     return { status: 'success', message: 'Artist deleted successfully' };
+  }
+
+  @Post(':id/assign-artist-to-concert/:concertId')
+  async assignArtistToConcert(
+    @Param('concertId') concertId: number,
+    @Param('id') artistId: number,
+  ) {
+    const artist = await this.concertService.assignArtistToConcert(
+      concertId,
+      artistId,
+    );
+    return { status: 'success', data: artist };
+  }
+
+  @Delete(':id/remove-artist-from-concert/:concertId')
+  async removeArtistFromConcert(
+    @Param('concertId') concertId: number,
+    @Param('id') artistId: number,
+  ) {
+    await this.concertService.removeArtistFromConcert(concertId, artistId);
+    return { status: 'success', message: 'Artist removed from concert' };
   }
 
   @Post(':id/upload-picture')

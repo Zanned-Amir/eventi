@@ -67,7 +67,7 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-    credentials: true,
+    credentials: true, // This allows cookies to be sent
   });
 
   const options = new DocumentBuilder()

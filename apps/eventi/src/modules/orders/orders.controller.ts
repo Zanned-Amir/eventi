@@ -8,26 +8,17 @@ import { Role } from '../../database/entities/user/userRole.entity';
 import { CreateOrderAdminDto } from './dto/CreateOrderAdminDto';
 
 @Controller('orders')
-@Roles(Role.ADMIN, Role.SUPPORT_STAFF)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getOrders(@Query() query) {
     const orders = await this.ordersService.getOrders(query);
     return {
       status: 'success',
       count: orders.orders.length,
       data: orders,
-    };
-  }
-
-  @Get(':id')
-  async getOrderById(@Param('id') id: number) {
-    const order = await this.ordersService.getOrderById(id);
-    return {
-      status: 'success',
-      data: order,
     };
   }
 
@@ -47,6 +38,7 @@ export class OrdersController {
   }
 
   @Post('o')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async createOrderForAdmin(
     @CurrentUser() user: any,
     @Body() createOrderAdminDto: CreateOrderAdminDto,
@@ -62,7 +54,18 @@ export class OrdersController {
     };
   }
 
+  @Get(':id')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
+  async getOrderById(@Param('id') id: number) {
+    const order = await this.ordersService.getOrderById(id);
+    return {
+      status: 'success',
+      data: order,
+    };
+  }
+
   @Get(':order_id/tickets')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async getOrderTickets(@Param('order_id') order_id: number) {
     const tickets = await this.ordersService.getOrderTickets(order_id);
     return {
@@ -83,6 +86,7 @@ export class OrdersController {
   }
 
   @Post(':order_id/tickets/email')
+  @Roles(Role.ADMIN, Role.SUPPORT_STAFF)
   async sendOrderTicketsEmail(@Param('order_id') order_id: number) {
     return this.ordersService.sendTicketOrderToMailer(order_id);
   }

@@ -917,4 +917,54 @@ export class ConcertService {
   async deleteRegistrationRule(id: number) {
     await this.registrationRuleRepository.delete(id);
   }
+
+  async assignArtistToConcert(concert_id: number, artist_id: number) {
+    const concert = await this.concertRepository.findOne({
+      where: { concert_id },
+      relations: ['artists'],
+    });
+    if (!concert) {
+      throw new HttpException('Concert not found', HttpStatus.NOT_FOUND);
+    }
+
+    const artist = await this.artistRepository.findOne({
+      where: { artist_id },
+    });
+    if (!artist) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    console.log('Concert:', concert);
+    console.log('Artist:', artist);
+
+    concert.artists.push(artist);
+    console.log('Concert:', concert);
+    await this.concertRepository.save(concert);
+
+    return concert;
+  }
+
+  async removeArtistFromConcert(concert_id: number, artist_id: number) {
+    const concert = await this.concertRepository.findOne({
+      where: { concert_id },
+      relations: ['artists'],
+    });
+    if (!concert) {
+      throw new HttpException('Concert not found', HttpStatus.NOT_FOUND);
+    }
+
+    const artist = await this.artistRepository.findOne({
+      where: { artist_id },
+    });
+    if (!artist) {
+      throw new HttpException('Artist not found', HttpStatus.NOT_FOUND);
+    }
+
+    concert.artists = concert.artists.filter(
+      (artist) => artist.artist_id !== artist_id,
+    );
+    await this.concertRepository.save(concert);
+
+    return concert;
+  }
 }

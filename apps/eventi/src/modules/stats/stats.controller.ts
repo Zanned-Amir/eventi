@@ -17,28 +17,6 @@ export class StatsController {
     return this.statsService.getTotalConcerts();
   }
 
-  @Get('total-order-revenue')
-  @ApiOperation({ summary: 'Get total order revenue within a date interval' })
-  @ApiQuery({
-    name: 'startDate',
-    required: false,
-    type: String,
-    description: 'Start date (YYYY-MM-DD)',
-  })
-  @ApiQuery({
-    name: 'endDate',
-    required: false,
-    type: String,
-    description: 'End date (YYYY-MM-DD)',
-  })
-  @ApiResponse({ status: 200, description: 'Total order revenue retrieved.' })
-  async getTotalOrderRevenue(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ): Promise<number> {
-    return this.statsService.getTotalOrderRevenue({ startDate, endDate });
-  }
-
   @Get('ticket-sales-by-category')
   @ApiOperation({ summary: 'Get ticket sales grouped by category' })
   @ApiResponse({ status: 200, description: 'Ticket sales data retrieved.' })
